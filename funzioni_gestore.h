@@ -6,11 +6,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <ctype.h>
 #include <time.h>
 
 #include "tipi_simulatore_societa.h"
+#include "gestione_semafori.h"
 
+
+static void handler_partenza(int sig) {
+    printf("ahiaaaaaa!\n");
+}
 /**
  * Controlla che la stringa passata come parametro rappresenti un intero non segnato
  * 
@@ -35,7 +41,8 @@ bool isUnsignedNumber(char* stringa) {
  * dell'individuo
  */
 void avvia_individuo (caratteristiche_individuo individuo) {
-    switch(fork()) {
+    pid_t pid_figlio = 0;
+    switch(pid_figlio = fork()) {
         case -1: {
             printf("Errore durante la creazione di un nuovo figlio.\n");
             exit(EXIT_FAILURE);
@@ -43,11 +50,14 @@ void avvia_individuo (caratteristiche_individuo individuo) {
         case 0: {
             char stringa_genoma [20];
             sprintf(stringa_genoma, "%ld", individuo.genoma);
+            
             if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, NULL) == -1) {
                 printf("Errore durante la creazione del nuovo figlio.\n");
                 exit(EXIT_FAILURE);
             }
             /* ---------- BLOCCO SOLO PER TEST ----------
+            sem_rilascia(sem_recupero(SEM_SINC_PADRE));
+            sem_riserva(sem_recupero(SEM_SINC_FIGLI));
             printf("Individuo tipo: %c, nome: %s, Genoma: %s\n", individuo.tipo, individuo.nome, stringa_genoma);
             exit(EXIT_SUCCESS);
             */
@@ -74,15 +84,18 @@ void crea_individuo (unsigned long genes) {
     }
     individuo.genoma = (rand() % (genes + 1)) + 2;
     individuo.nome[0] = (char)(rand() % 25) + 65;
-    
+
     avvia_individuo(individuo);
+
 }
 
 /**
  * Inizializza tanti individui in base a quanto è segnato nel parametro init_people
  * 
  * @param {int} init_people: Il numero di individui da inizializzare
- * @param {unsigned long}: Il massimo valore che può assumere il genoma di un individuo.
+ * @param {unsigned long} genes: Il massimo valore che può assumere il genoma di un individuo.
+ * @param {pid_t []} individui_da_avviare: Ad ogni creazione di un individuo il suo pid viene messo
+ * all'interno di questo array.
  */
 void inizializza_individui(int init_people, unsigned long genes) {
     for(int i = 0; i < init_people; i++) {

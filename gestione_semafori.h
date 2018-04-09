@@ -22,7 +22,7 @@
 int sem_creazione(int chiave) {
     int id = 0;
     if((id = semget(chiave, 1, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
-        printf("Erorre durante la creazione del semaforo con ID = %i./n", chiave);
+        printf("Erorre durante la creazione del semaforo con ID = %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
     return id;
@@ -38,7 +38,7 @@ int sem_creazione(int chiave) {
 int sem_recupero(int chiave) {
     int id = 0;
     if((id = semget(chiave, 1, 0)) == -1) {
-        printf("Erorre durante il recupero del semaforo con ID = %i./n", chiave);
+        printf("Erorre durante il recupero del semaforo con ID = %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
     return id;

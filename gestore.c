@@ -32,8 +32,22 @@ int main(int argc, char** argv) {
      */
     unsigned int sim_time = 0;
 
-    
-    
+    /**
+     * l'ID della shm creata per gli individui di tipo A
+     */
+    // int shm_a_id = shm_creazione(SHM_A_KEY, init_people - 1);
+
+    /**
+     * l'ID della shm creata per gli individui di tipo B
+     */
+    // int shm_b_id = shm_creazione(SHM_B_KEY, init_people - 1);
+
+    int sem_sinc_padre_id = sem_creazione(SEM_SINC_PADRE);
+    sem_init_occupato(sem_sinc_padre_id);
+
+    int sem_sinc_figli_id = sem_creazione(SEM_SINC_FIGLI);
+    sem_init_occupato(sem_sinc_figli_id);
+
     srand(time(NULL));
 
     // Assegnamento delle variabili passate come parametro
@@ -78,5 +92,16 @@ int main(int argc, char** argv) {
     }
 
     inizializza_individui(init_people, genes);
+
+    for (int i = 0; i < init_people; i++) {
+        printf("init_people = %i, i = %i\n", init_people, i);
+        sem_riserva(sem_sinc_padre_id);
+    }
+
+    sem_cancella(sem_sinc_padre_id);
+
+    for(int i = 0; i < init_people; i++) {
+        sem_rilascia(sem_sinc_figli_id);
+    }
 
 }
