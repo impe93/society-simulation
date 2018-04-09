@@ -24,7 +24,7 @@
  */
 int shm_creazione(int chiave, int grandezza_array) {
     int id = 0;
-    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | 0666)) == -1) {
         printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }

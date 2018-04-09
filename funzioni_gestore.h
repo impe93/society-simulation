@@ -13,16 +13,42 @@
 #include "tipi_simulatore_societa.h"
 #include "gestione_semafori.h"
 
-
-static void handler_partenza(int sig) {
-    printf("ahiaaaaaa!\n");
-}
 /**
  * Controlla che la stringa passata come parametro rappresenti un intero non segnato
  * 
  * @param {char*} stringa: La stringa da controllare
  * @return {bool}: TRUE se la stringa è un numero non segnato, FALSE altrimenti.
  */
+bool isUnsignedNumber(char* stringa);
+
+/**
+ * Avvia un nuovo individuo con le caratteristiche specificate nel parametro individuo
+ * 
+ * @param {caratteristiche_individuo} individuo: la struttura che ha specificate le caratteristiche
+ * dell'individuo
+ */
+void avvia_individuo (caratteristiche_individuo individuo);
+
+/**
+ * Crea casualmente le proprietà che dovrà avere il nuovo individuo e lo avvia.
+ * 
+ * @param {unsigned long} genes: Rappresenta fino a che numero un gene può arrivare, serve per
+ * limitare il valore casuale
+ */
+void crea_individuo (unsigned long genes);
+
+/**
+ * Inizializza tanti individui in base a quanto è segnato nel parametro init_people
+ * 
+ * @param {int} init_people: Il numero di individui da inizializzare
+ * @param {unsigned long} genes: Il massimo valore che può assumere il genoma di un individuo.
+ * @param {pid_t []} individui_da_avviare: Ad ogni creazione di un individuo il suo pid viene messo
+ * all'interno di questo array.
+ */
+void inizializza_individui(int init_people, unsigned long genes);
+
+// Definizione metodi
+
 bool isUnsignedNumber(char* stringa) {
     bool risultato = TRUE;
     for(int i = 0; *(stringa + i) != '\0' && risultato; i++) {
@@ -34,12 +60,6 @@ bool isUnsignedNumber(char* stringa) {
     return risultato;
 }
 
-/**
- * Avvia un nuovo individuo con le caratteristiche specificate nel parametro individuo
- * 
- * @param {caratteristiche_individuo} individuo: la struttura che ha specificate le caratteristiche
- * dell'individuo
- */
 void avvia_individuo (caratteristiche_individuo individuo) {
     pid_t pid_figlio = 0;
     switch(pid_figlio = fork()) {
@@ -52,7 +72,7 @@ void avvia_individuo (caratteristiche_individuo individuo) {
             sprintf(stringa_genoma, "%ld", individuo.genoma);
             
             if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, NULL) == -1) {
-                printf("Errore durante la creazione del nuovo figlio.\n");
+                printf("Errore durante la creazione del nuovo individuo.\n");
                 exit(EXIT_FAILURE);
             }
             /* ---------- BLOCCO SOLO PER TEST ----------
@@ -68,12 +88,6 @@ void avvia_individuo (caratteristiche_individuo individuo) {
     }
 }
 
-/**
- * Crea casualmente le proprietà che dovrà avere il nuovo individuo e lo avvia.
- * 
- * @param {unsigned long} genes: Rappresenta fino a che numero un gene può arrivare, serve per
- * limitare il valore casuale
- */
 void crea_individuo (unsigned long genes) {
     caratteristiche_individuo individuo;
 
@@ -86,17 +100,8 @@ void crea_individuo (unsigned long genes) {
     individuo.nome[0] = (char)(rand() % 25) + 65;
 
     avvia_individuo(individuo);
-
 }
 
-/**
- * Inizializza tanti individui in base a quanto è segnato nel parametro init_people
- * 
- * @param {int} init_people: Il numero di individui da inizializzare
- * @param {unsigned long} genes: Il massimo valore che può assumere il genoma di un individuo.
- * @param {pid_t []} individui_da_avviare: Ad ogni creazione di un individuo il suo pid viene messo
- * all'interno di questo array.
- */
 void inizializza_individui(int init_people, unsigned long genes) {
     for(int i = 0; i < init_people; i++) {
         crea_individuo(genes);
