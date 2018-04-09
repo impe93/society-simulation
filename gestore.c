@@ -80,19 +80,36 @@ int main(int argc, char** argv) {
      * l'ID della shm creata per gli individui di tipo A
      */
     // int shm_a_id = shm_creazione(SHM_A_KEY, init_people);
+    // inizializza_shm(shm_a_id, init_people);
+
+
+    /**
+     * Creazione e inizializzazione del semaforo per l'accesso alla shm per
+     * individui di tipo A
+     */
+    // int sem_shm_a_id = sem_creazione(SEM_SHM_A);
+    // sem_init_disponibile(sem_shm_a_id);
 
     /**
      * l'ID della shm creata per gli individui di tipo B
      */
     // int shm_b_id = shm_creazione(SHM_B_KEY, init_people - 1);
+    // inizializza_shm(shm_b_id, init_people);
+    
+    /**
+     * Creazione e inizializzazione del semaforo per l'accesso alla shm per
+     * individui di tipo A
+     */
+    // int sem_shm_b_id = sem_creazione(SEM_SHM_B);
+    // sem_init_disponibile(sem_shm_b_id);
 
     /**
      * ID ed inizializzazione dei semafori per la sincronizzazione
      * degli individui prima della partenza con il gestore
      */
-    int sem_sinc_padre_id = sem_creazione(SEM_SINC_PADRE);
+    int sem_sinc_padre_id = sem_creazione(SEM_SINC_GESTORE);
     sem_init_occupato(sem_sinc_padre_id);
-    int sem_sinc_figli_id = sem_creazione(SEM_SINC_FIGLI);
+    int sem_sinc_figli_id = sem_creazione(SEM_SINC_INDIVIDUI);
     sem_init_occupato(sem_sinc_figli_id);
 
     /**
@@ -108,6 +125,6 @@ int main(int argc, char** argv) {
         sem_rilascia(sem_sinc_figli_id);
     }
 
-    
+
 
 }

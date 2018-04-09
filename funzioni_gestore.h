@@ -108,5 +108,25 @@ void inizializza_individui(int init_people, unsigned long genes) {
     }
 }
 
+/**
+ * Inizializza l'array di rappresentazioni degli individui di un detrminato tipo
+ * con valori di default
+ * 
+ * @param {int} shm_id: L'ID della shared memory di individui da inizializzare
+ * @param {int} init_people: Il numero di individui totali che saranno presenti
+ * all'interno del programma
+ */
+void inizializza_shm(int shm_id, int init_people) {
+    rappresentazione_individuo** individui;
+    shm_attach(shm_id, individui);
+    for (int i = 0; i < init_people - 1; i++) {
+        (*(*(individui + i))).utilizzata = FALSE;
+        (*(*(individui + i))).pid = 0;
+        (*(*(individui + i))).caratteristiche.tipo = 'C';
+        (*(*(individui + i))).caratteristiche.genoma = 0;
+        strcpy((*(*(individui + i))).caratteristiche.nome, "");
+    }
+    shm_detach(individui);
+}
 
 #endif
