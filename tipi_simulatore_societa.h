@@ -9,8 +9,14 @@
 #define SHM_A_KEY 1234
 #define SHM_B_KEY 1235
 
-#define SEM_SINC_PADRE 1236
-#define SEM_SINC_FIGLI 1237
+#define SEM_SINC_GESTORE 1236
+#define SEM_SINC_INDIVIDUI 1237
+#define SEM_SHM_A 1238
+#define SEM_SHM_B 1239
+
+#define MSG_A_B 1240
+#define MSG_GESTORE_A 1241
+#define MSG_GESTORE_B 1242
 
 typedef enum { FALSE, TRUE } bool;
 
