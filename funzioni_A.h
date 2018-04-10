@@ -13,11 +13,7 @@
  * @param {char**} argv: dati passati a tipo_A.c dal gestore e contenti le caratteristiche 
  * del nuovo individuo (tipo, nome, genoma)
  */
-void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
-    p->tipo = *argv[0];
-    strcpy(p->nome, *(argv + 1));
-    p->genoma = atol(*(argv + 2));
-}
+void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv);
 
 /**
  * Inserisce i dati rappresentanti le caratteristiche del processo A all'interno di una 
@@ -26,10 +22,29 @@ void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** 
  * alla lista di rappresentazione_individuo presente in shm A
  * @param {pid_t} pid: pid del processo A
  * @param {caratteristiche_individuo} individuo: individuo appena creato da registrare in shm A
+ * @param {int} numero_A: numero massimo di individui A presenti nella shm A
  */
-void inserimento_in_shm_A(rappresentazione_individuo** p_shm_A, pid_t pid, caratteristiche_individuo individuo){
+void inserimento_in_shm_A(rappresentazione_individuo** p_shm_A, pid_t pid, caratteristiche_individuo individuo);
+
+/**
+ * Calcola il MCD tra il genoma dell'individuo A e il genoma dell'individuo B e ne ritorna il valore.
+ * @param {unsigned long} genoma_A: genoma dell'individuo A
+ * @param {unsigned long} genoma_B: genoma dell'individuo B
+ * @return: ritorna l'unsigned long corrispondente all'MCD tra genoma A e genoma B
+ */
+unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B);
+
+
+
+void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
+    p->tipo = *argv[0];
+    strcpy(p->nome, *(argv + 1));
+    p->genoma = atol(*(argv + 2));
+}
+
+void inserimento_in_shm_A(rappresentazione_individuo** p_shm_A, pid_t pid, caratteristiche_individuo individuo, int numero_A){
     bool inserito_in_shm_A = FALSE;
-    for(int i = 0; inserito_in_shm_A == FALSE; i++){
+    for(int i = 0; inserito_in_shm_A == FALSE && i < numero_A; i++){
         if((*(p_shm_A + i))->utilizzata == FALSE){
             (*(*(p_shm_A + i))).pid = pid;
             (*(*(p_shm_A + i))).caratteristiche = individuo;
@@ -38,6 +53,14 @@ void inserimento_in_shm_A(rappresentazione_individuo** p_shm_A, pid_t pid, carat
             printf("trovata struct dove inserire info sul processo A in shmA\n");
         }
     }
+}
+
+unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B){
+    if (genoma_B == genoma_A)
+        return genoma_B;
+    if (genoma_A < genoma_B)  
+        return mcd(genoma_A - genoma_B, genoma_B);
+    return mcd(genoma_A, genoma_B - genoma_A);
 }
 
 #endif
