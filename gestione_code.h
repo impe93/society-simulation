@@ -28,7 +28,7 @@ typedef struct {
  * @return: ritorna l'ID della coda appena creata, in caso di errore durante la creazione
  * chiude il programma
  */
-int crea_coda_messaggi(int chiave) {
+int msg_crea_coda_messaggi(int chiave) {
     int id = 0;
     if ((id = msgget(chiave, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
         printf("Errore durante la creazione della coda per la chiave %i.\n", chiave);
@@ -45,7 +45,7 @@ int crea_coda_messaggi(int chiave) {
  * @return: ritorna l'ID della coda appena creata, in caso di errore durante il recupero
  * chiude il programma
  */
-int recupera_coda(int chiave) {
+int msg_recupera_coda(int chiave) {
     int id = 0;
     if ((id = msgget(chiave, 0)) == -1) {
         printf("Errore durante il recupero della coda per la chiave %i.\n", chiave);
@@ -63,7 +63,7 @@ int recupera_coda(int chiave) {
  * @param messaggio: Una stringa che indica il messaggio che si vuole mandare
  * @param tipo: Un long che indice il tipo del messaggio che si vuole mandare
  */
-void manda_messaggio(int id, char messaggio [], long tipo) {
+void msg_manda_messaggio(int id, char messaggio [], long tipo) {
     msg da_inviare;
     da_inviare.mtype = tipo;
     strcpy(da_inviare.mtext, messaggio);
@@ -83,7 +83,7 @@ void manda_messaggio(int id, char messaggio [], long tipo) {
  * @param messaggio_ricevuto: Un puntatore a char che rappresenta la stringa ricevuta,
  * inizialmente vuota.
  */
-void ricevi_messaggio(int id, long tipo, char* messaggio_ricevuto) {
+void msg_ricevi_messaggio(int id, long tipo, char* messaggio_ricevuto) {
     msg da_ricevere;
     if (msgrcv(id, &da_ricevere, sizeof(msg) - sizeof(long), tipo, 0) == -1) {
         printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
@@ -103,7 +103,7 @@ void ricevi_messaggio(int id, long tipo, char* messaggio_ricevuto) {
  * @param messaggio_ricevuto: Un puntatore a char che rappresenta la stringa ricevuta,
  * inizialmente vuota.
  */
-void ricevi_messaggio_nowait(int id, long tipo, char* messaggio_ricevuto) {
+void msg_ricevi_messaggio_nowait(int id, long tipo, char* messaggio_ricevuto) {
     msg da_ricevere;
     if (msgrcv(id, &da_ricevere, sizeof(msg) - sizeof(long), tipo, 0) == -1) {
         printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
@@ -117,7 +117,7 @@ void ricevi_messaggio_nowait(int id, long tipo, char* messaggio_ricevuto) {
  * 
  * @param id: Un intero che rappresenta l'ID della coda che si vuole rimuovere.
  */
-void rimuovi_coda(int id) {
+void msg_rimuovi_coda(int id) {
     if (msgctl(id, IPC_RMID, 0) == -1) {
         printf("Errore durante la rimozione della coda con ID = %i.\n", id);
         exit(EXIT_FAILURE);
