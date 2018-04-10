@@ -6,6 +6,8 @@
 
 #define DEBUG printf("Sono arrivato alla linea %d del file %s.\n", __LINE__, __FILE__)
 
+
+
 #define SHM_A_KEY 1234
 #define SHM_B_KEY 1235
 
