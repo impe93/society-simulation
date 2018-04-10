@@ -47,6 +47,16 @@ void crea_individuo (unsigned long genes);
  */
 void inizializza_individui(int init_people, unsigned long genes);
 
+/**
+ * Inizializza l'array di rappresentazioni degli individui di un detrminato tipo
+ * con valori di default
+ * 
+ * @param {int} shm_id: L'ID della shared memory di individui da inizializzare
+ * @param {int} init_people: Il numero di individui totali che saranno presenti
+ * all'interno del programma
+ */
+void inizializza_shm(int shm_id, int init_people);
+
 // Definizione metodi
 
 bool isUnsignedNumber(char* stringa) {
@@ -108,14 +118,6 @@ void inizializza_individui(int init_people, unsigned long genes) {
     }
 }
 
-/**
- * Inizializza l'array di rappresentazioni degli individui di un detrminato tipo
- * con valori di default
- * 
- * @param {int} shm_id: L'ID della shared memory di individui da inizializzare
- * @param {int} init_people: Il numero di individui totali che saranno presenti
- * all'interno del programma
- */
 void inizializza_shm(int shm_id, int init_people) {
     rappresentazione_individuo** individui;
     shm_attach(shm_id, individui);

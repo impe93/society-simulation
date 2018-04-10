@@ -31,7 +31,7 @@ int main(int argc, char** argv){
     int sem_sinc_figli_id = sem_recupero(SEM_SINC_INDIVIDUI);
     int sem_shm_A = sem_recupero(SEM_SHM_A);
     int msg_gestore_A = recupera_coda(MSG_GESTORE_A);
-    int msg_A_B = recupera_coda(MSG_A_B);<
+    int msg_A_B = recupera_coda(MSG_A_B);
     int shm_A = shm_recupero(SHM_A_KEY, 1);
     rappresentazione_individuo** p_shm_A;
     shm_attach(shm_A, p_shm_A);
