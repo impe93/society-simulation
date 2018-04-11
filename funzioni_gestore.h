@@ -27,7 +27,7 @@ bool isUnsignedNumber(char* stringa);
  * @param {caratteristiche_individuo} individuo: la struttura che ha specificate le caratteristiche
  * dell'individuo
  */
-void avvia_individuo (caratteristiche_individuo individuo);
+void avvia_individuo (caratteristiche_individuo individuo, int init_people);
 
 /**
  * Crea casualmente le proprietà che dovrà avere il nuovo individuo e lo avvia.
@@ -35,7 +35,7 @@ void avvia_individuo (caratteristiche_individuo individuo);
  * @param {unsigned long} genes: Rappresenta fino a che numero un gene può arrivare, serve per
  * limitare il valore casuale
  */
-void crea_individuo (unsigned long genes);
+void crea_individuo (unsigned long genes, int init_people);
 
 /**
  * Inizializza tanti individui in base a quanto è segnato nel parametro init_people
@@ -70,7 +70,7 @@ bool isUnsignedNumber(char* stringa) {
     return risultato;
 }
 
-void avvia_individuo (caratteristiche_individuo individuo) {
+void avvia_individuo (caratteristiche_individuo individuo, int init_people) {
     pid_t pid_figlio = 0;
     switch(pid_figlio = fork()) {
         case -1: {
@@ -79,11 +79,21 @@ void avvia_individuo (caratteristiche_individuo individuo) {
         }
         case 0: {
             char stringa_genoma [20];
+            char stringa_init_people [32];
             sprintf(stringa_genoma, "%ld", individuo.genoma);
-            
-            if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, NULL) == -1) {
-                printf("Errore durante la creazione del nuovo individuo.\n");
-                exit(EXIT_FAILURE);
+            sprintf(stringa_init_people, "%i", init_people);
+            if (individuo.tipo == 'A') {
+                sem_riserva(sem_recupero(SEM_SHM_A));
+                if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, NULL) == -1) {
+                    printf("Errore durante la creazione del nuovo individuo.\n");
+                    exit(EXIT_FAILURE);
+                }
+            } else if (individuo.tipo == 'B') {
+                sem_riserva(sem_recupero(SEM_SHM_B));
+                if (execl("./tipo_B", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, NULL) == -1) {
+                    printf("Errore durante la creazione del nuovo individuo.\n");
+                    exit(EXIT_FAILURE);
+                }
             }
             /* ---------- BLOCCO SOLO PER TEST ----------
             sem_rilascia(sem_recupero(SEM_SINC_PADRE));
@@ -98,7 +108,7 @@ void avvia_individuo (caratteristiche_individuo individuo) {
     }
 }
 
-void crea_individuo (unsigned long genes) {
+void crea_individuo (unsigned long genes, int init_people) {
     caratteristiche_individuo individuo;
 
     if (rand() % 2) {
@@ -109,12 +119,12 @@ void crea_individuo (unsigned long genes) {
     individuo.genoma = (rand() % (genes + 1)) + 2;
     individuo.nome[0] = (char)(rand() % 25) + 65;
 
-    avvia_individuo(individuo);
+    avvia_individuo(individuo, init_people);
 }
 
 void inizializza_individui(int init_people, unsigned long genes) {
     for(int i = 0; i < init_people; i++) {
-        crea_individuo(genes);
+        crea_individuo(genes, init_people);
     }
 }
 
@@ -129,6 +139,35 @@ void inizializza_shm(int shm_id, int init_people) {
         strcpy((*(*(individui + i))).caratteristiche.nome, "");
     }
     shm_detach(individui);
+}
+
+void terminazione_simulazione(int sim_time, int init_people, pid_t pid_gestore) {
+    sleep(sim_time);
+            
+    rappresentazione_individuo shm_a [init_people - 1];
+    rappresentazione_individuo shm_b [init_people - 1];
+            
+    shm_attach(shm_recupero(SHM_A_KEY, init_people - 1), shm_a);
+    shm_attach(shm_recupero(SHM_B_KEY, init_people - 1), shm_b);
+
+    sem_riserva(sem_recupero(SEM_SHM_A));
+    sem_riserva(sem_recupero(SEM_SHM_B));
+    for(int i = 0; i < init_people -1; i++) {
+        if (kill(shm_a[i].pid, SIGUSR1) == -1) {
+            printf("Errore durante l'invio del segnale di terminazione al processo A.\n");
+            exit(EXIT_FAILURE);
+        }
+        if (kill(shm_b[i].pid, SIGUSR1) == -1) {
+            printf("Errore durante l'invio del segnale di terminazione al processo B.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (kill(pid_gestore, SIGUSR1) == -1) {
+        printf("Errore durante l'invio del segnale di terminazione al processo gestore.\n");
+        exit(EXIT_FAILURE);
+    }
+    sem_rilascia(sem_recupero(SEM_SHM_B));
+    sem_rilascia(sem_recupero(SEM_SHM_A));
 }
 
 #endif

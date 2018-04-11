@@ -35,6 +35,11 @@ int main(int argc, char** argv) {
      */
     unsigned int sim_time = 0;
 
+    /**
+     * Il pid del gestore
+     */
+    pid_t pid_gestore = getpid();
+
     // Assegnamento delle variabili passate come parametro
     if (argc == 5) {
         bool corretto = TRUE;
@@ -109,7 +114,7 @@ int main(int argc, char** argv) {
      */
     int sem_sinc_padre_id = sem_creazione(SEM_SINC_GESTORE);
     sem_init_occupato(sem_sinc_padre_id);
-    
+
     int sem_sinc_figli_id = sem_creazione(SEM_SINC_INDIVIDUI);
     sem_init_occupato(sem_sinc_figli_id);
 
@@ -133,14 +138,38 @@ int main(int argc, char** argv) {
      */
     inizializza_individui(init_people, genes);
     for (int i = 0; i < init_people; i++) {
-        printf("init_people = %i, i = %i\n", init_people, i);
         sem_riserva(sem_sinc_padre_id);
     }
-    sem_cancella(sem_sinc_padre_id);
     for(int i = 0; i < init_people; i++) {
         sem_rilascia(sem_sinc_figli_id);
     }
 
+    /**
+     * Creazione del figlio che fa il conto alla rovescia per la terminazione.
+     */
+    switch(fork()) {
+        case -1: {
+            printf("Errore durante la creazione del processo per segnalazione time-out.\n");
+            exit(EXIT_FAILURE);
+        }
+        case 0: {
+            terminazione_simulazione(sim_time, init_people, pid_gestore);
+            exit(EXIT_SUCCESS);
+        }
+        default: break;
+    }
 
-
+    /**
+     * Rimozione dei sistemi IPC utilizzati
+     */
+    shm_remove(shm_a_id);
+    shm_remove(shm_b_id);
+    sem_cancella(sem_shm_a_id);
+    sem_cancella(sem_shm_b_id);
+    sem_cancella(sem_sinc_figli_id);
+    sem_cancella(sem_sinc_padre_id);
+    msg_rimuovi_coda(msg_a_b_id);
+    msg_rimuovi_coda(msg_gestore_a);
+    msg_rimuovi_coda(msg_gestore_b);    
+    
 }
