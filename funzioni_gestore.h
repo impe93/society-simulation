@@ -138,7 +138,7 @@ void attivita_terminatore_individui(int init_people, int birth_death, unsigned l
  * @param {int} init_people: La lunghezza massima che può avere l'array di individui
  * @param {descrizione_simulazione*} descrizione: La struttura che descrive la simulazione
  */
-void preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione);
+bool preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione);
 
 /**
  * Chiamato quando un processo casuale di tipo B deve terminare, il metodo lo sceglie,
@@ -147,7 +147,7 @@ void preparazione_terminazione_a(int init_people, descrizione_simulazione* descr
  * @param {int} init_people: La lunghezza massima che può avere l'array di individui
  * @param {descrizione_simulazione*} descrizione: La struttura che descrive la simulazione
  */
-void preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione);
+bool preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione);
 
 /**
  * Misura la lunghezza della stringa passata come paramentro
@@ -343,28 +343,38 @@ void termina_individuo(rappresentazione_individuo individui [], int numero_da_te
     sem_rilascia(sem_shm_descrizione_id);
 }
 
-void preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione) {
+bool preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione) {
     int sem_shm_a_id = sem_recupero(SEM_SHM_A);
     sem_riserva(sem_shm_a_id);
     int shm_a_id = shm_recupero(SHM_A_KEY, init_people);
     rappresentazione_individuo individui [init_people - 1];
     shm_attach(shm_a_id, individui);
     int individui_attivi = conta_individui_attivi(individui, init_people);
+    if (individui_attivi < 2) {
+        sem_rilascia(sem_shm_a_id);
+        return FALSE;
+    }
     int numero_da_terminare = numero_random(1, individui_attivi);
     termina_individuo(individui, numero_da_terminare, descrizione);
     sem_rilascia(sem_shm_a_id);
+    return TRUE;
 }
 
-void preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione) {
+bool preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione) {
     int sem_shm_b_id = sem_recupero(SEM_SHM_B);
     sem_riserva(sem_shm_b_id);
     int shm_b_id = shm_recupero(SHM_B_KEY, init_people);
     rappresentazione_individuo individui [init_people - 1];
     shm_attach(shm_b_id, individui);
     int individui_attivi = conta_individui_attivi(individui, init_people);
+    if (individui_attivi < 2) {
+        sem_rilascia(sem_shm_b_id);
+        return FALSE;
+    }
     int numero_da_terminare = numero_random(1, individui_attivi);
     termina_individuo(individui, numero_da_terminare, descrizione);
     sem_rilascia(sem_shm_b_id);
+    return TRUE;
 }
 
 int lunghezza_stringa(char* stringa) {
@@ -409,9 +419,13 @@ void attivita_terminatore_individui(int init_people, int birth_death, unsigned l
         sleep(birth_death);
         char tipo_processo_scelto = scelta_tipo_processo();
         if (tipo_processo_scelto == 'A') {
-            preparazione_terminazione_a(init_people, descrizione);
+            if (!preparazione_terminazione_a(init_people, descrizione)) {
+                preparazione_terminazione_b(init_people, descrizione);
+            }
         } else {
-            preparazione_terminazione_b(init_people, descrizione);
+            if(!preparazione_terminazione_b(init_people, descrizione)) {
+                preparazione_terminazione_a(init_people, descrizione);
+            }
         }
         caratteristiche_individuo nuovo_individuo = crea_individuo(genes);
         avvia_individuo(nuovo_individuo, init_people);
