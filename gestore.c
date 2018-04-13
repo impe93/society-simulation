@@ -40,6 +40,16 @@ int main(int argc, char** argv) {
      */
     pid_t pid_gestore = getpid();
 
+    /**
+     * Il pid del terminatore di processi che appartiene al gestore
+     */
+    pid_t pid_terminatore_processi = 0;
+
+    /**
+     * Il puntatore alla struttura contenente i dati della simulazione
+     */
+    descrizione_simulazione* descrizione = NULL;
+
     // Assegnamento delle variabili passate come parametro
     if (argc == 5) {
         bool corretto = TRUE;
@@ -134,6 +144,20 @@ int main(int argc, char** argv) {
     int msg_gestore_b = msg_crea_coda_messaggi(MSG_GESTORE_B);
 
     /**
+     * Inizializzazione della shared memory per l'accesso alla descrizione della simulazione
+     * ed attaccamento della variabile alla memoria.
+     */
+    int shm_descrizione_id = shm_creazione_descrizione(SHM_DESCRIZIONE_KEY);
+    shm_attach(shm_descrizione_id, descrizione);
+
+    /**
+     * 
+     */
+    int sem_shm_descrizione_id = sem_creazione(SEM_SHM_DESCRIZIONE);
+    sem_init_disponibile(sem_shm_descrizione_id);
+    
+
+    /**
      * Inizializzazione e sincronizzazione degli individui
      */
     inizializza_individui(init_people, genes);
@@ -145,6 +169,21 @@ int main(int argc, char** argv) {
     }
 
     /**
+     * Creazione del figlio che si occupa della terminazione casuale dei processi A e B.
+     */
+    switch(fork()) {
+        case -1: {
+            prtinf("Errore durante la creazione del figlio che si occupa della terminazione dei processi A e B.\n");
+            exit(EXIT_FAILURE);
+        }
+        case 0: {
+            attivita_terminatore_individui(init_people, birth_death, genes, descrizione);
+            exit(EXIT_SUCCESS);
+        }
+        default: break;
+    }
+
+    /**
      * Creazione del figlio che fa il conto alla rovescia per la terminazione.
      */
     switch(fork()) {
@@ -153,7 +192,7 @@ int main(int argc, char** argv) {
             exit(EXIT_FAILURE);
         }
         case 0: {
-            terminazione_simulazione(sim_time, init_people, pid_gestore);
+            terminazione_simulazione(sim_time, init_people, pid_gestore, pid_terminatore_processi);
             exit(EXIT_SUCCESS);
         }
         default: break;
