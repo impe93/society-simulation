@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
     long mtype;
-    bool individui_accopiati;
+    bool esito;
 } msg_esito_accoppiamento;
 
 /**
@@ -77,17 +77,7 @@ int msg_recupera_coda(int chiave) {
  * @param messaggio: Una stringa che indica il messaggio che si vuole mandare
  * @param tipo: Un long che indice il tipo del messaggio che si vuole mandare
  */
-/*void msg_manda_messaggio(int id, char messaggio [], long tipo) {
-    msg da_inviare;
-    da_inviare.mtype = tipo;
-    strcpy(da_inviare.mtext, messaggio);
-    if (msgsnd(id, &da_inviare, sizeof(msg) - sizeof(long), 0) == -1) {
-        printf("Errore durante l'invio del messaggio sulla coda con ID = %i.\n", id);
-        exit(EXIT_FAILURE);
-    }
-}*/
-
-void msg_manda_messaggio(int id, void* messaggio, long tipo) {
+void msg_manda_messaggio(int id, char messaggio [], long tipo) {
     msg da_inviare;
     da_inviare.mtype = tipo;
     strcpy(da_inviare.mtext, messaggio);
@@ -112,6 +102,26 @@ void msg_manda_messaggio_individuo(int id, individuo_per_accoppiamento messaggio
     da_inviare.mtype = tipo;
     da_inviare.individuo = messaggio;
     if (msgsnd(id, &da_inviare, sizeof(msg_individuo) - sizeof(long), 0) == -1) {
+        printf("Errore durante l'invio del messaggio sulla coda con ID = %i.\n", id);
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Manda un messaggio con contenuto corrispondente al parametro "esito_accoppiamento" ad una coda con ID 
+ * uguale al parametro "id" e di tipo uguale al parametro "tipo", in caso di errore durante
+ * l'invio il programma termina.
+ * 
+ * @param id: L'ID della coda su cui si vuole mandare il messaggio
+ * @param esito_accoppiamento: valore di tipo bool che indica se l'accoppiamento è avvenuto
+ * oppure no, costituisce il contenuto del messaggio
+ * @param tipo: Un long che indice il tipo del messaggio che si vuole mandare
+ */
+void msg_manda_messaggio_accoppiamento(int id, bool esito_accoppiamento, long tipo) {
+    msg_esito_accoppiamento da_inviare;
+    da_inviare.mtype = tipo;
+    da_inviare.esito = esito_accoppiamento;
+    if (msgsnd(id, &da_inviare, sizeof(msg_esito_accoppiamento) - sizeof(long), 0) == -1) {
         printf("Errore durante l'invio del messaggio sulla coda con ID = %i.\n", id);
         exit(EXIT_FAILURE);
     }
@@ -153,6 +163,26 @@ void msg_ricevi_messaggio_individuo(int id, long tipo, individuo_per_accoppiamen
         exit(EXIT_FAILURE);
     }
     messaggio_ricevuto = &da_ricevere.individuo;
+}
+
+/**
+ * Riceve un messaggio dalla coda con ID uguale al parametro "id" e di tipo uguale
+ * al parametro "tipo", il valore contenuto nel campo esito del messaggio ricevuto viene
+ * copiato all'interno del parametro "messaggio_ricevuto", in caso di fallimento invece 
+ * conclude il processo.
+ * 
+ * @param id: Un int che rappresenta l'ID della coda da cui si vuole ricevere il messaggio.
+ * @param tipo: Un long che rappresenta il tipo del messaggio che si vuole ricevere.
+ * @param messaggio_ricevuto: Un puntatore a bool che rappresenta la risposta alla richiesta 
+ * di accoppiamento, inizialmente nullo.
+ */
+void msg_ricevi_messaggio_accoppiamento(int id, long tipo, bool* messaggio_ricevuto) {
+    msg_esito_accoppiamento da_ricevere;
+    if (msgrcv(id, &da_ricevere, sizeof(msg_esito_accoppiamento) - sizeof(long), tipo, 0) == -1) {
+        printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
+        exit(EXIT_FAILURE);
+    }
+    messaggio_ricevuto = &da_ricevere.esito;
 }
 
 /**
