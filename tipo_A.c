@@ -28,14 +28,14 @@ int main(int argc, char** argv){
     rappresentazione_individuo** p_shm_A;
     shm_attach(shm_A, p_shm_A);
 
-    caratteristiche_individuo individuo = NULL;
+    caratteristiche_individuo individuo_A;
     int individui_in_shm = 0;
 
     /*
     Recupero dei parametri passati dal gestore per la creazione (tipo, nome, genoma) dell'individuo
     */
     if(argc == 4) {
-        inserimento_caratteristiche_individuo(&individuo, argv);
+        inserimento_caratteristiche_individuo(&individuo_A, argv);
         individui_in_shm = atoi(*(argv+3));
     } else {
         printf("numero di argomenti passati al processo A errato\n");
@@ -46,8 +46,7 @@ int main(int argc, char** argv){
     scrittura in una struct della shm_A dei dati rappresentanti il processo A libera
     dopo avvenuta sincronizzazione
     */
-    sem_riserva(sem_shm_A);
-    inserimento_in_shm_A(p_shm_A, getpid(), individuo);
+    inserimento_in_shm_A(p_shm_A, getpid(), individuo_A);
     sem_rilascia(sem_shm_A);
 
     /*
@@ -55,9 +54,51 @@ int main(int argc, char** argv){
     creati da quest'ultimo prima di proseguire con l'esecuzione
     */
     sem_rilascia(sem_sinc_padre_id);
-    sem_riserva(sem_sinc_figli_id;
+    sem_riserva(sem_sinc_figli_id);
+
+    unsigned long soglia_accettazione_richiesta = individuo_A.genoma / 2;
+    
+    for( ; ; ){
+        /*
+        Legge dalla sua coda di messaggi se ha ricevuto una richiesta di accoppiamento da un B e 
+        memorizza il messaggio ricevuto in una struct individuo_per_accoppiamento
+        */
+        individuo_per_accoppiamento individuo_B;
+        bool richiesta_accettata = FALSE;
+        
+        msg_ricevi_messaggio_individuo(msg_A_B, getpid(), &individuo_B);
+
+        sem_riserva(sem_shm_A);
+
+        //Valuta se accoppiarsi con B calcolando se questo può rafforzare i suoi discendenti:
+        //Accetta subito se B ha genoma munltiplo del suo
+        if(individuo_B.caratteristiche.genoma % individuo_A.genoma){
+            richiesta_accettata = TRUE;
+        } else{
+            unsigned long mcd_genomi_A_B = mcd(individuo_A.genoma, individuo_B.caratteristiche.genoma);
+            if(mcd_genomi_A_B >= soglia_accettazione_richiesta){
+                richiesta_accettata = TRUE;
+            } else{
+                richiesta_accettata = FALSE;
+            }
+        }
+        /*
+        Se la richiesta è stata accettata mando una risposta di accettazione di accoppiamento a B,
+        altrimenti mando una risposta di rifiuto della richiesta a B
+        */
+        if(richiesta_accettata){
+
+        } else{
+            
+        }
+
+        //ancora da inserire release del semaforo della shm A
 
 
+
+
+
+    }
 
     
 
