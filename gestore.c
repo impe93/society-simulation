@@ -35,6 +35,21 @@ int main(int argc, char** argv) {
      */
     unsigned int sim_time = 0;
 
+    /**
+     * Il pid del gestore
+     */
+    pid_t pid_gestore = getpid();
+
+    /**
+     * Il pid del terminatore di processi che appartiene al gestore
+     */
+    pid_t pid_terminatore_processi = 0;
+
+    /**
+     * Il puntatore alla struttura contenente i dati della simulazione
+     */
+    descrizione_simulazione* descrizione = NULL;
+
     // Assegnamento delle variabili passate come parametro
     if (argc == 5) {
         bool corretto = TRUE;
@@ -109,7 +124,7 @@ int main(int argc, char** argv) {
      */
     int sem_sinc_padre_id = sem_creazione(SEM_SINC_GESTORE);
     sem_init_occupato(sem_sinc_padre_id);
-    
+
     int sem_sinc_figli_id = sem_creazione(SEM_SINC_INDIVIDUI);
     sem_init_occupato(sem_sinc_figli_id);
 
@@ -129,18 +144,71 @@ int main(int argc, char** argv) {
     int msg_gestore_b = msg_crea_coda_messaggi(MSG_GESTORE_B);
 
     /**
+     * Inizializzazione della shared memory per l'accesso alla descrizione della simulazione
+     * ed attaccamento della variabile alla memoria.
+     */
+    int shm_descrizione_id = shm_creazione_descrizione(SHM_DESCRIZIONE_KEY);
+    shm_attach(shm_descrizione_id, descrizione);
+
+    /**
+     * 
+     */
+    int sem_shm_descrizione_id = sem_creazione(SEM_SHM_DESCRIZIONE);
+    sem_init_disponibile(sem_shm_descrizione_id);
+    
+
+    /**
      * Inizializzazione e sincronizzazione degli individui
      */
     inizializza_individui(init_people, genes);
     for (int i = 0; i < init_people; i++) {
-        printf("init_people = %i, i = %i\n", init_people, i);
         sem_riserva(sem_sinc_padre_id);
     }
-    sem_cancella(sem_sinc_padre_id);
     for(int i = 0; i < init_people; i++) {
         sem_rilascia(sem_sinc_figli_id);
     }
 
+    /**
+     * Creazione del figlio che si occupa della terminazione casuale dei processi A e B.
+     */
+    switch(fork()) {
+        case -1: {
+            prtinf("Errore durante la creazione del figlio che si occupa della terminazione dei processi A e B.\n");
+            exit(EXIT_FAILURE);
+        }
+        case 0: {
+            attivita_terminatore_individui(init_people, birth_death, genes, descrizione);
+            exit(EXIT_SUCCESS);
+        }
+        default: break;
+    }
 
+    /**
+     * Creazione del figlio che fa il conto alla rovescia per la terminazione.
+     */
+    switch(fork()) {
+        case -1: {
+            printf("Errore durante la creazione del processo per segnalazione time-out.\n");
+            exit(EXIT_FAILURE);
+        }
+        case 0: {
+            terminazione_simulazione(sim_time, init_people, pid_gestore, pid_terminatore_processi);
+            exit(EXIT_SUCCESS);
+        }
+        default: break;
+    }
 
+    /**
+     * Rimozione dei sistemi IPC utilizzati
+     */
+    shm_remove(shm_a_id);
+    shm_remove(shm_b_id);
+    sem_cancella(sem_shm_a_id);
+    sem_cancella(sem_shm_b_id);
+    sem_cancella(sem_sinc_figli_id);
+    sem_cancella(sem_sinc_padre_id);
+    msg_rimuovi_coda(msg_a_b_id);
+    msg_rimuovi_coda(msg_gestore_a);
+    msg_rimuovi_coda(msg_gestore_b);    
+    
 }

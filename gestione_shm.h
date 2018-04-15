@@ -24,7 +24,23 @@
  */
 int shm_creazione(int chiave, int grandezza_array) {
     int id = 0;
-    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | 0666)) == -1) {
+    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+        printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
+        exit(EXIT_FAILURE);
+    }
+    return id;
+}
+
+/**
+ * Crea un nuovo segmento di shared memory grande quanto la struttura "descrizione_simulazione"
+ * utilizzando come chiave il parametro "chiave" passato come parametro e restituisce l'ID del
+ * segmento appena creato
+ * 
+ * @param {int} chiave: La chiave utilizzata dalla shared memory
+ */
+int shm_creazione_descrizione(int chiave) {
+    int id = 0;
+    if ((id = shmget(id, sizeof(descrizione_simulazione), IPC_CREAT | IPC_EXCL | 0666)) == -1) {
         printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
@@ -43,7 +59,24 @@ int shm_creazione(int chiave, int grandezza_array) {
  */
 int shm_recupero(int chiave, int grandezza_array) {
     int id = 0;
-    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, 0)) == -1) {
+    if ((id = shmget(chiave, sizeof(rappresentazione_individuo) * grandezza_array, 0)) == -1) {
+        printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
+        exit(EXIT_FAILURE);
+    }
+    return id;
+}
+
+/**
+ * Restituisce l'ID di un segmento di shm esistente utilizzando la sua chiave (parametro "chiave") di
+ * grandezza uguale alla struttura "descrizione_simulazione"
+ * 
+ * @param {int} chiave: Chiave utilizzata per il recupero dell'ID del segmento di shm
+ * @return: ritorna l'ID del segmento di shm già esistente
+ * @error: Terminazione del processo che ha eseguito il metodo
+ */
+int shm_recupero_descrizione(int chiave) {
+    int id = 0;
+    if ((id = shmget(chiave, sizeof(descrizione_simulazione), 0)) == -1) {
         printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }

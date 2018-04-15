@@ -10,11 +10,13 @@
 
 #define SHM_A_KEY 1234
 #define SHM_B_KEY 1235
+#define SHM_DESCRIZIONE_KEY 1243
 
 #define SEM_SINC_GESTORE 1236
 #define SEM_SINC_INDIVIDUI 1237
 #define SEM_SHM_A 1238
 #define SEM_SHM_B 1239
+#define SEM_SHM_DESCRIZIONE 1244
 
 #define MSG_A_B 1240
 #define MSG_GESTORE_A 1241
@@ -39,5 +41,18 @@ typedef struct {
     pid_t pid;
     caratteristiche_individuo caratteristiche;
 } rappresentazione_individuo;
+
+/**
+ * Struttura utilizzata per tracciare i cambiamenti durante la simulazione
+ */
+typedef struct {
+    int individui_a_creati;
+    int individui_b_creati;
+    caratteristiche_individuo individuo_nome_lungo;
+    caratteristiche_individuo individuo_genoma_lungo;
+    int individui_a_attivi;
+    int individui_b_attivi;
+    int processi_totali_terminati;
+} descrizione_simulazione;
 
 #endif
