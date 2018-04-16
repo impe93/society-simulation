@@ -7,6 +7,17 @@
 #include <string.h>
 
 /**
+ * Handler da associare al segnale SIGTERM che cambia il valore della variabile globale
+ * pronto_a_terminare in 1, in modo da notificare al processo A che deve terminare.
+ */
+void signal_handler(int sig);
+
+/**
+ * Associa un handler (signal_handler()) al segnale SIGTERM.
+ */
+void associazione_handler();
+
+/**
  * Inserisce i dati passati all'interno del parametro argv all'interno della struttura
  * di tipo caratteristiche_individuo puntata dal parametro p.
  * @param {caratteristiche_individuo*} p: riferimento a nuovo individuo in creazione
@@ -30,11 +41,21 @@ void inserimento_in_shm_A(rappresentazione_individuo** p_shm_A, pid_t pid, carat
  * Calcola il MCD tra il genoma dell'individuo A e il genoma dell'individuo B e ne ritorna il valore.
  * @param {unsigned long} genoma_A: genoma dell'individuo A
  * @param {unsigned long} genoma_B: genoma dell'individuo B
- * @return: ritorna l'unsigned long corrispondente all'MCD tra genoma A e genoma B
+ * @return: ritorna l'unsigned long corrispondente al MCD tra genoma A e genoma B
  */
 unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B);
 
 
+void signal_handler(int sig){
+    pronto_a_terminare = 1;
+}
+
+void associazione_handler(){
+    if(signal(SIGTERM, signal_handler) == SIG_ERR){
+        printf("errore per segnale SIGTERM\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
     p->tipo = *argv[0];
