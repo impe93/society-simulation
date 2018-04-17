@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <string.h>
+#include <errno.h>
 
 /**
  * La struttura dati utilizzata per lo scambio di messaggi
@@ -50,7 +51,7 @@ typedef struct {
  * l'ID della coda appena creata.
  * 
  * @param {int} chiave: E la chiave utilizzata per la creazione della nuova coda
- * @return: ritorna l'ID della coda appena creata, in caso di errore durante la creazione
+ * @return {int}: ritorna l'ID della coda appena creata, in caso di errore durante la creazione
  * chiude il programma
  */
 int msg_crea_coda_messaggi(int chiave) {
@@ -175,6 +176,8 @@ void msg_ricevi_messaggio(int id, long tipo, char* messaggio_ricevuto) {
     strcpy(messaggio_ricevuto, da_ricevere.mtext);
 }
 
+
+
 /**
  * Riceve un messaggio dalla coda con ID uguale al parametro "id" e di tipo uguale
  * al parametro "tipo", la struct del messaggio ricevuto viene copiata all'interno
@@ -245,11 +248,38 @@ void msg_ricevi_messaggio_notifica_accoppiamento(int id, informazioni_accoppiame
  */
 void msg_ricevi_messaggio_nowait(int id, long tipo, char* messaggio_ricevuto) {
     msg da_ricevere;
-    if (msgrcv(id, &da_ricevere, sizeof(msg) - sizeof(long), tipo, 0) == -1) {
+    if (msgrcv(id, &da_ricevere, sizeof(msg) - sizeof(long), tipo, IPC_NOWAIT) == -1) {
         printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
         exit(EXIT_FAILURE);
     }
     strcpy(messaggio_ricevuto, da_ricevere.mtext);
+}
+
+/**
+ * Riceve un messaggio dalla coda con ID uguale al parametro "id" e di tipo uguale
+ * al parametro "tipo", la struct del messaggio ricevuto viene copiata all'interno
+ * del parametro "messaggio_ricevuto" e ritorna TRUE, se invece non ci sono messaggi con quel "tipo"
+ * ritorna FALSE, in caso di fallimento invece conclude il processo.
+ * 
+ * @param {int} id: Un int che rappresenta l'ID della coda da cui si vuole ricevere il messaggio.
+ * @param {long} tipo: Un long che rappresenta il tipo del messaggio che si vuole ricevere.
+ * @param {individuo_per_accoppiamento} messaggio_ricevuto: Un puntatore individuo_per_accoppiamento 
+ * che rappresenta le informazioni su un individuo ricevute, inizialmente nullo
+ * @return {bool}: ritorna TRUE in caso abbia trovato un messaggio con quel tipo sulla coda,
+ * FALSE altrimenti.
+ */
+bool msg_controlla_presenza_messaggi(int id, long tipo, individuo_per_accoppiamento* messaggio_ricevuto) {
+    msg_individuo da_ricevere;
+    if (msgrcv(id, &da_ricevere, sizeof(msg_individuo) - sizeof(long), tipo, IPC_NOWAIT) == -1) {
+        if(errno == ENOMSG){
+            return FALSE;
+        } else{
+            printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
+            exit(EXIT_FAILURE);
+        }
+    }
+    *messaggio_ricevuto = da_ricevere.individuo;
+    return TRUE;
 }
 
 /**

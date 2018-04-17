@@ -5,12 +5,20 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 
+#include "tipi_simulatore_societa.h"
 #include "gestione_code.h"
 #include "gestione_semafori.h"
 #include "gestione_shm.h"
 #include "funzioni_A.h"
 
-int pronto_a_terminare = 0;
+pid_t pid_A = 0;
+int individui_in_shm = 0;
+
+/**
+ * Handler da associare al segnale SIGTERM che svolge le dovute operazioni prima della
+ * terminazione non spontanea (ordinata dal gestore) del processo A.
+ */
+void signal_handler(int sig);
 
 
 int main(int argc, char** argv){
@@ -18,24 +26,27 @@ int main(int argc, char** argv){
     Associo un handler al segnale SIGTERM, in modo da svolgere le dovute operazioni se il
     gestore sceglie di terminare il processo A.
     */
-    associazione_handler();
+    if(signal(SIGTERM, signal_handler) == SIG_ERR){
+        printf("errore in associazione a handler per segnale SIGTERM\n");
+        exit(EXIT_FAILURE);
+    }
 
     /* 
     Recupero id di: semafori, code di messaggi per comunicazione con gestore e con processi B, 
     memoria condivisa processi A e processi B.
     Attaccamento segmento memoria condivisa A.
     */
+    int pid_A = getpid();
     int sem_sinc_padre_id = sem_recupero(SEM_SINC_GESTORE);
     int sem_sinc_figli_id = sem_recupero(SEM_SINC_INDIVIDUI);
     int sem_shm_A = sem_recupero(SEM_SHM_A);
-    int msg_gestore_A = recupera_coda(MSG_GESTORE_A);
-    int msg_A_B = recupera_coda(MSG_A_B);
+    int msg_gestore_A = msg_recupera_coda(MSG_GESTORE_A);
+    int msg_A_B = msg_recupera_coda(MSG_A_B);
     int shm_A = shm_recupero(SHM_A_KEY, 1);
-    rappresentazione_individuo** p_shm_A;
-    shm_attach(shm_A, p_shm_A);
+    rappresentazione_individuo* p_shm_A;
+    shm_attach_rappresentazione_individuo(shm_A, &p_shm_A);
 
     caratteristiche_individuo individuo_A;
-    int individui_in_shm = 0;
     int individui_B_rifiutati = 0;
 
     /*
@@ -53,7 +64,7 @@ int main(int argc, char** argv){
     scrittura in una struct della shm_A dei dati rappresentanti il processo A libera
     dopo avvenuta sincronizzazione
     */
-    inserimento_in_shm_A(p_shm_A, getpid(), individuo_A);
+    inserimento_in_shm_A(p_shm_A, getpid(), individuo_A, individui_in_shm);
     sem_rilascia(sem_shm_A);
 
     /*
@@ -73,9 +84,7 @@ int main(int argc, char** argv){
         memorizza il messaggio ricevuto in una struct individuo_per_accoppiamento
         */
         msg_ricevi_messaggio_individuo(msg_A_B, getpid(), &individuo_B);
-
-        sem_riserva(sem_shm_A);
-
+        
         //Valuta se accoppiarsi con B calcolando se questo può rafforzare i suoi discendenti:
         //Accetta subito se B ha genoma munltiplo del suo
         if(individuo_B.caratteristiche.genoma % individuo_A.genoma){
@@ -113,6 +122,46 @@ int main(int argc, char** argv){
     informazioni.pid_coniuge = individuo_B.pid;
     msg_manda_messaggio_notifica_accoppiamento(msg_gestore_A, informazioni);
 
-    shm_detach(p_shm_A);
+    shm_detach_rappresentazione_individuo(p_shm_A);
+    exit(EXIT_SUCCESS);
+}
+
+void signal_handler(int sig){
+    int msg_A_B = msg_recupera_coda(MSG_A_B);
+    int shm_A = shm_recupero(SHM_A_KEY, 1);
+    int sem_shm_A = sem_recupero(SEM_SHM_A);
+    rappresentazione_individuo* p_shm_A;
+    individuo_per_accoppiamento individuo_B;
+    bool riserva_sem_da_effettuare = TRUE;
+    bool rimosso_da_shm_A = FALSE;
+
+    shm_attach_rappresentazione_individuo(shm_A, &p_shm_A);
+    /*
+    se un individuo B ha cercato di contattarmi dopo la ricezione del segnale rispondo
+    rifiutando la sua richiesta di accoppiamento
+    */
+    if(msg_controlla_presenza_messaggi(msg_A_B, pid_A, &individuo_B)){
+        msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
+        riserva_sem_da_effettuare = FALSE;
+    }
+    if(riserva_sem_da_effettuare){
+        sem_riserva(sem_shm_A);
+    }
+    /*
+    Rimuovo le informazioni riguardanti il processo A dalla shm A
+    */
+    for(int i = 0; rimosso_da_shm_A == FALSE && i < individui_in_shm; i++){
+        if(p_shm_A[i].pid == pid_A){
+            p_shm_A[i].utilizzata = FALSE;
+            p_shm_A[i].pid = 0;
+            p_shm_A[i].caratteristiche.tipo = 'C';
+            strcpy(p_shm_A[i].caratteristiche.nome, "");
+            p_shm_A[i].caratteristiche.genoma = 0;
+            rimosso_da_shm_A = TRUE;
+        }
+    }
+    sem_rilascia(sem_shm_A);
+    shm_detach_rappresentazione_individuo(p_shm_A);
+
     exit(EXIT_SUCCESS);
 }
