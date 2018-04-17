@@ -9,6 +9,8 @@
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <errno.h>
+#include <string.h>
 
 #include "tipi_simulatore_societa.h"
 
@@ -24,7 +26,7 @@
  */
 int shm_creazione(int chiave, int grandezza_array) {
     int id = 0;
-    if ((id = shmget(id, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+    if ((id = shmget(chiave, sizeof(rappresentazione_individuo) * grandezza_array, IPC_CREAT | IPC_EXCL | 0666)) == -1) {
         printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
@@ -40,7 +42,7 @@ int shm_creazione(int chiave, int grandezza_array) {
  */
 int shm_creazione_descrizione(int chiave) {
     int id = 0;
-    if ((id = shmget(id, sizeof(descrizione_simulazione), IPC_CREAT | IPC_EXCL | 0666)) == -1) {
+    if ((id = shmget(chiave, sizeof(descrizione_simulazione), IPC_CREAT | IPC_EXCL | 0666)) == -1) {
         printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
@@ -93,8 +95,25 @@ int shm_recupero_descrizione(int chiave) {
  * @param p: void* in cui il metodo inserisce un puntatore all'inizio del segmento di SM nello 
  * spazio di indirizzi virtuale del processo chiamante
  */
-void shm_attach(int shmid, void* p) {
-    if((p = shmat(shmid, NULL, 0)) == (void*)-1) {
+void shm_attach_rappresentazione_individuo(int shmid, rappresentazione_individuo** p) {
+    if(((*p) = (rappresentazione_individuo*) shmat(shmid, NULL, 0)) == (void*)-1) {
+        printf("errore in attacco del segmento di shm con id %i\n", shmid);
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Attacca il segmento di shm con ID corrispondente al parametro "shmid" alla memoria virtuale
+ * del processo chiamante e inserisce nel parametro "p" un puntatore all'inizio del segmento di SM
+ * nello spazio di indirizzi virtuale di tale processo.
+ * 
+ * @param shmid: intero rappresentante l'ID del segmento di shm da attaccare alla memoria virtuale 
+ * del processo
+ * @param p: void* in cui il metodo inserisce un puntatore all'inizio del segmento di SM nello 
+ * spazio di indirizzi virtuale del processo chiamante
+ */
+void shm_attach_descrizione_simulazione(int shmid, descrizione_simulazione** p) {
+    if(((*p) = (descrizione_simulazione*) shmat(shmid, NULL, 0)) == (void*)-1) {
         printf("errore in attacco del segmento di shm con id %i\n", shmid);
         exit(EXIT_FAILURE);
     }
@@ -108,9 +127,24 @@ void shm_attach(int shmid, void* p) {
  * @param shmaddr: indirizzo del punto di accesso all'area di shm dallo spazio degli
  * indirizzi del processo chiamante
  */
-void shm_detach(void* shmaddr){
+void shm_detach_rappresentazione_individuo(rappresentazione_individuo* shmaddr){
     if(shmdt(shmaddr) == -1){
-        printf("errore nello staccamento del segmento di shm\n");
+        printf("Errore durante il distacco della shm\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Stacca l'area di shm dallo spazio degli indirizzi del processo chiamante utilizzando 
+ * l’indirizzo del punto di accesso a tale area (restituito dalla shmat()) e contenuto 
+ * nel parametro "shmaddr".
+ * 
+ * @param shmaddr: indirizzo del punto di accesso all'area di shm dallo spazio degli
+ * indirizzi del processo chiamante
+ */
+void shm_detach_descrizione_simulazione(descrizione_simulazione* shmaddr) {
+    if(shmdt(shmaddr) == -1){
+        printf("Errore durante il distacco della shm\n");
         exit(EXIT_FAILURE);
     }
 }
