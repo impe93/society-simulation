@@ -62,7 +62,7 @@ int shm_creazione_descrizione(int chiave) {
 int shm_recupero(int chiave, int grandezza_array) {
     int id = 0;
     if ((id = shmget(chiave, sizeof(rappresentazione_individuo) * grandezza_array, 0)) == -1) {
-        printf("Errore durante la creazione della memoria condivisa con chiave %i.\n", chiave);
+        printf("Errore durante il recupero della memoria condivisa con chiave %i.\n", chiave);
         exit(EXIT_FAILURE);
     }
     return id;

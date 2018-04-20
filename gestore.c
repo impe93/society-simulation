@@ -9,15 +9,60 @@
 #include "gestione_semafori.h"
 #include "gestione_shm.h"
 
+/**
+* Un int che rappresenta il numero della popolazione che verrà generata all'inizio
+*/
+unsigned int init_people = 0;
+
+void term_terminatore_handler (int sig) {
+    exit(EXIT_SUCCESS);
+}
+
+void term_handler (int sig) {
+    bool individui_terminati = FALSE;
+    int sem_shm_a_id = sem_recupero(SEM_SHM_A);
+    int sem_shm_b_id = sem_recupero(SEM_SHM_B);
+    
+    rappresentazione_individuo* individui_A;
+    rappresentazione_individuo* individui_B;
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_A_KEY, init_people), &individui_A);
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_B_KEY, init_people), &individui_B);
+    while(individui_terminati == FALSE) {
+        sem_riserva(sem_shm_a_id);
+        sem_riserva(sem_shm_b_id);
+        int numero_individui_A = conta_individui_attivi(individui_A, init_people);
+        int numero_individui_B = conta_individui_attivi(individui_B, init_people);
+        if (numero_individui_A == 0 && numero_individui_B == 0) {
+            individui_terminati = TRUE;
+        }
+        sem_rilascia(sem_shm_a_id);
+        sem_rilascia(sem_shm_b_id);
+    }
+    while(wait(NULL) != -1);
+
+    msg_rimuovi_coda(msg_recupera_coda(1240));
+    msg_rimuovi_coda(msg_recupera_coda(1241));
+    msg_rimuovi_coda(msg_recupera_coda(1242));
+    sem_cancella(sem_recupero(1236));
+    sem_cancella(sem_recupero(1237));
+    sem_cancella(sem_recupero(1238));
+    sem_cancella(sem_recupero(1239));
+    sem_cancella(sem_recupero(1244));
+    shm_remove(shm_recupero(1234, 12));
+    shm_remove(shm_recupero_descrizione(1243));
+    shm_remove(shm_recupero(1235, 12));
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char** argv) {
     
+    if (signal(SIGTERM, term_handler) == (void*)-1) {
+        printf("Errore durante l'assegnamento dell'handler al gestore.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Utilizzato e chiamato solo una volta per generare dei numeri casuali
     srand(time(NULL));
-
-    /**
-     * Un int che rappresenta il numero della popolazione che verrà generata all'inizio
-     */
-    unsigned int init_people = 0;
 
     /**
      * Un unsigned long che rappresenta il gene
@@ -94,9 +139,8 @@ int main(int argc, char** argv) {
     /**
      * l'ID della shm creata per gli individui di tipo A
      */
-    int shm_a_id = shm_creazione(SHM_A_KEY, init_people);
+    int shm_a_id = shm_creazione(SHM_A_KEY, init_people - 1);
     inizializza_shm(shm_a_id, init_people);
-
 
     /**
      * Creazione e inizializzazione del semaforo per l'accesso alla shm per
@@ -148,7 +192,7 @@ int main(int argc, char** argv) {
      * ed attaccamento della variabile alla memoria.
      */
     int shm_descrizione_id = shm_creazione_descrizione(SHM_DESCRIZIONE_KEY);
-    shm_attach(shm_descrizione_id, descrizione);
+    shm_attach_descrizione_simulazione(shm_descrizione_id, &descrizione);
 
     /**
      * 
@@ -171,12 +215,16 @@ int main(int argc, char** argv) {
     /**
      * Creazione del figlio che si occupa della terminazione casuale dei processi A e B.
      */
-    switch(fork()) {
+    switch(pid_terminatore_processi = fork()) {
         case -1: {
-            prtinf("Errore durante la creazione del figlio che si occupa della terminazione dei processi A e B.\n");
+            printf("Errore durante la creazione del figlio che si occupa della terminazione dei processi A e B.\n");
             exit(EXIT_FAILURE);
         }
         case 0: {
+            if (signal(SIGTERM, term_terminatore_handler) == (void*)-1) {
+                printf("Errore durante l'assegnazione dell'handler al terminatore di processi.\n");
+                exit(EXIT_FAILURE);
+            }
             attivita_terminatore_individui(init_people, birth_death, genes, descrizione);
             exit(EXIT_SUCCESS);
         }
@@ -198,17 +246,6 @@ int main(int argc, char** argv) {
         default: break;
     }
 
-    /**
-     * Rimozione dei sistemi IPC utilizzati
-     */
-    shm_remove(shm_a_id);
-    shm_remove(shm_b_id);
-    sem_cancella(sem_shm_a_id);
-    sem_cancella(sem_shm_b_id);
-    sem_cancella(sem_sinc_figli_id);
-    sem_cancella(sem_sinc_padre_id);
-    msg_rimuovi_coda(msg_a_b_id);
-    msg_rimuovi_coda(msg_gestore_a);
-    msg_rimuovi_coda(msg_gestore_b);    
+    while(wait(NULL) != -1);
     
 }
