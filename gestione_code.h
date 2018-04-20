@@ -176,8 +176,6 @@ void msg_ricevi_messaggio(int id, long tipo, char* messaggio_ricevuto) {
     strcpy(messaggio_ricevuto, da_ricevere.mtext);
 }
 
-
-
 /**
  * Riceve un messaggio dalla coda con ID uguale al parametro "id" e di tipo uguale
  * al parametro "tipo", la struct del messaggio ricevuto viene copiata all'interno

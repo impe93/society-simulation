@@ -38,6 +38,15 @@ void inserimento_in_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid, caratt
  */
 unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B);
 
+/**
+ * Rimuove da shm_A i dati relativi al processo con pid corrispondente al parametro "pid_A".
+ * @param {rappresentazione_individuo*} p_shm_A: puntatore a rappresentazione_individuo che punta
+ * a un segmento di memeria condivisa
+ * @param {pid_t} pid_A: pid dell'individuo A da rimuovere
+ * @param {int} individui_A: numero di individui A presenti all'interno della shm_A.
+ */
+void rimozione_da_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid_A, int individui_A);
+
 
 void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
     p->tipo = *argv[0];
@@ -63,6 +72,20 @@ unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B){
     if (genoma_A < genoma_B)  
         return mcd(genoma_A - genoma_B, genoma_B);
     return mcd(genoma_A, genoma_B - genoma_A);
+}
+
+void rimozione_da_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid_A, int individui_A){
+    bool rimosso = FALSE;
+    for(int i = 0; rimosso == FALSE && i < individui_A; i++){
+        if(p_shm_A[i].pid == pid_A){
+            p_shm_A[i].utilizzata = FALSE;
+            p_shm_A[i].pid = 0;
+            p_shm_A[i].caratteristiche.tipo = 'C';
+            strcpy(p_shm_A[i].caratteristiche.nome, "");
+            p_shm_A[i].caratteristiche.genoma = 0;
+            rimosso = TRUE;
+        }
+    }
 }
 
 #endif
