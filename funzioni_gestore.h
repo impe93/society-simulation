@@ -9,9 +9,11 @@
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
+#include <string.h>
 
 #include "tipi_simulatore_societa.h"
 #include "gestione_semafori.h"
+#include "gestione_shm.h"
 
 /**
  * Controlla che la stringa passata come parametro rappresenti un intero non segnato
@@ -27,7 +29,7 @@ bool isUnsignedNumber(char* stringa);
  * @param {caratteristiche_individuo} individuo: la struttura che ha specificate le caratteristiche
  * dell'individuo
  */
-void avvia_individuo (caratteristiche_individuo individuo, int init_people);
+void avvia_individuo (caratteristiche_individuo individuo, int init_people, bool inizializzazione);
 
 /**
  * Crea casualmente le proprietà che dovrà avere il nuovo individuo e lo avvia.
@@ -193,7 +195,7 @@ bool isUnsignedNumber(char* stringa) {
     return risultato;
 }
 
-void avvia_individuo (caratteristiche_individuo individuo, int init_people) {
+void avvia_individuo (caratteristiche_individuo individuo, int init_people, bool inizializzazione) {
     pid_t pid_figlio = 0;
     switch(pid_figlio = fork()) {
         case -1: {
@@ -203,18 +205,17 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people) {
         case 0: {
             char stringa_genoma [20];
             char stringa_init_people [32];
-            int sem_shm_descrizione_id = sem_recupero(SEM_SHM_DESCRIZIONE);
             sprintf(stringa_genoma, "%ld", individuo.genoma);
             sprintf(stringa_init_people, "%i", init_people);
             if (individuo.tipo == 'A') {
                 sem_riserva(sem_recupero(SEM_SHM_A));
-                if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, NULL) == -1) {
+                if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione, NULL) == -1) {
                     printf("Errore durante la creazione del nuovo individuo.\n");
                     exit(EXIT_FAILURE);
                 }
             } else if (individuo.tipo == 'B') {
                 sem_riserva(sem_recupero(SEM_SHM_B));
-                if (execl("./tipo_B", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, NULL) == -1) {
+                if (execl("./tipo_B", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione,NULL) == -1) {
                     printf("Errore durante la creazione del nuovo individuo.\n");
                     exit(EXIT_FAILURE);
                 }
@@ -236,28 +237,27 @@ caratteristiche_individuo crea_individuo (unsigned long genes) {
     }
     individuo.genoma = (rand() % (genes + 1)) + 2;
     individuo.nome[0] = (char)(rand() % 25) + 65;
-
     return individuo;
 }
 
 void inizializza_individui(int init_people, unsigned long genes) {
     for(int i = 0; i < init_people; i++) {
         caratteristiche_individuo individuo = crea_individuo(genes);
-        avvia_individuo(individuo, init_people);
+        avvia_individuo(individuo, init_people, TRUE);
     }
 }
 
 void inizializza_shm(int shm_id, int init_people) {
-    rappresentazione_individuo** individui;
-    shm_attach(shm_id, individui);
+    rappresentazione_individuo* individui;
+    shm_attach_rappresentazione_individuo(shm_id, &individui);
     for (int i = 0; i < init_people - 1; i++) {
-        (*(*(individui + i))).utilizzata = FALSE;
-        (*(*(individui + i))).pid = 0;
-        (*(*(individui + i))).caratteristiche.tipo = 'C';
-        (*(*(individui + i))).caratteristiche.genoma = 0;
-        strcpy((*(*(individui + i))).caratteristiche.nome, "");
+        individui[i].utilizzata = FALSE;
+        individui[i].pid = 0;
+        individui[i].caratteristiche.tipo = 'C';
+        individui[i].caratteristiche.genoma = 0;
+        strcpy(individui[i].caratteristiche.nome, "");
     }
-    shm_detach(individui);
+    shm_detach_rappresentazione_individuo(individui);
 }
 
 void invio_segnale(pid_t pid, int segnale) {
@@ -270,27 +270,27 @@ void invio_segnale(pid_t pid, int segnale) {
 void terminazione_simulazione(int sim_time, int init_people, pid_t pid_gestore, pid_t pid_terminatore_processi) {
     sleep(sim_time);
             
-    rappresentazione_individuo shm_a [init_people - 1];
-    rappresentazione_individuo shm_b [init_people - 1];
-            
-    shm_attach(shm_recupero(SHM_A_KEY, init_people - 1), shm_a);
-    shm_attach(shm_recupero(SHM_B_KEY, init_people - 1), shm_b);
+    rappresentazione_individuo* shm_a;
+    rappresentazione_individuo* shm_b;
 
-    sem_riserva(sem_recupero(SEM_SHM_A));
-    sem_riserva(sem_recupero(SEM_SHM_B));
-    for(int i = 0; i < init_people -1; i++) {
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_A_KEY, init_people - 1), &shm_a);
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_B_KEY, init_people - 1), &shm_b);
+    invio_segnale(pid_gestore, SIGTERM);
+    invio_segnale(pid_terminatore_processi, SIGTERM);
+    for(int i = 0; i < init_people - 1; i++) {
+        sem_riserva(sem_recupero(SEM_SHM_A));
+        sem_riserva(sem_recupero(SEM_SHM_B));
         if (shm_a[i].utilizzata) {
-            invio_segnale(shm_a[i].pid, SIGUSR1);
+            invio_segnale(shm_a[i].pid, SIGTERM);
         }
         if (shm_b[i].utilizzata) {
-            invio_segnale(shm_b[i].pid, SIGUSR1);
+            invio_segnale(shm_b[i].pid, SIGTERM);
         }
     }
-    invio_segnale(pid_gestore, SIGUSR1);
-    invio_segnale(pid_terminatore_processi, SIGUSR1);
-    // Aggiungere il segnale al terminatore dei processi.
-    sem_rilascia(sem_recupero(SEM_SHM_B));
-    sem_rilascia(sem_recupero(SEM_SHM_A));
+    printf("Arrivato qui.\n");
+    shm_detach_rappresentazione_individuo(shm_a);
+    shm_detach_rappresentazione_individuo(shm_b);
+    // sem_rilascia(sem_recupero(SEM_SHM_B));
 }
 
 char scelta_tipo_processo() {
@@ -312,7 +312,7 @@ int conta_individui_attivi(rappresentazione_individuo individui [], int init_peo
 }
 
 int numero_random(unsigned int min, unsigned int max) {
-    if (min <= max) {
+    if (min >= max) {
         return 0;
     }
     return rand() % (max - min) + min;
@@ -330,9 +330,7 @@ void termina_individuo(rappresentazione_individuo individui [], int numero_da_te
     }
     rappresentazione_individuo individuo_da_terminare = individui[j];
     int stato_terminazione = 0;
-    invio_segnale(individuo_da_terminare.pid, SIGUSR1);
-    waitpid(individuo_da_terminare.pid, &stato_terminazione, 0);
-    
+    invio_segnale(individuo_da_terminare.pid, SIGTERM);
     sem_riserva(sem_shm_descrizione_id);
     (*descrizione).processi_totali_terminati++;
     if (individuo_da_terminare.caratteristiche.tipo == 'A') {
@@ -347,16 +345,16 @@ bool preparazione_terminazione_a(int init_people, descrizione_simulazione* descr
     int sem_shm_a_id = sem_recupero(SEM_SHM_A);
     sem_riserva(sem_shm_a_id);
     int shm_a_id = shm_recupero(SHM_A_KEY, init_people);
-    rappresentazione_individuo individui [init_people - 1];
-    shm_attach(shm_a_id, individui);
+    rappresentazione_individuo* individui;
+    shm_attach_rappresentazione_individuo(shm_a_id, &individui);
     int individui_attivi = conta_individui_attivi(individui, init_people);
     if (individui_attivi < 2) {
         sem_rilascia(sem_shm_a_id);
         return FALSE;
     }
-    int numero_da_terminare = numero_random(1, individui_attivi);
+    int numero_da_terminare = numero_random(0, individui_attivi);
     termina_individuo(individui, numero_da_terminare, descrizione);
-    sem_rilascia(sem_shm_a_id);
+    shm_detach_rappresentazione_individuo(individui);
     return TRUE;
 }
 
@@ -364,8 +362,8 @@ bool preparazione_terminazione_b(int init_people, descrizione_simulazione* descr
     int sem_shm_b_id = sem_recupero(SEM_SHM_B);
     sem_riserva(sem_shm_b_id);
     int shm_b_id = shm_recupero(SHM_B_KEY, init_people);
-    rappresentazione_individuo individui [init_people - 1];
-    shm_attach(shm_b_id, individui);
+    rappresentazione_individuo* individui;
+    shm_attach_rappresentazione_individuo(shm_b_id, &individui);
     int individui_attivi = conta_individui_attivi(individui, init_people);
     if (individui_attivi < 2) {
         sem_rilascia(sem_shm_b_id);
@@ -373,7 +371,7 @@ bool preparazione_terminazione_b(int init_people, descrizione_simulazione* descr
     }
     int numero_da_terminare = numero_random(1, individui_attivi);
     termina_individuo(individui, numero_da_terminare, descrizione);
-    sem_rilascia(sem_shm_b_id);
+    shm_detach_rappresentazione_individuo(individui);
     return TRUE;
 }
 
@@ -397,7 +395,7 @@ void aggiorna_descrizione_nuovo_individuo(caratteristiche_individuo individuo) {
     int sem_shm_descrizione_id = sem_recupero(SEM_SHM_DESCRIZIONE);
     int shm_descrizione_id = shm_recupero_descrizione(SHM_DESCRIZIONE_KEY);
     descrizione_simulazione* descrizione = NULL;
-    shm_attach(shm_descrizione_id, descrizione);
+    shm_attach_descrizione_simulazione(shm_descrizione_id, &descrizione);
     sem_riserva(sem_shm_descrizione_id);
     if (individuo.genoma > (*descrizione).individuo_genoma_lungo.genoma) {
         (*descrizione).individuo_genoma_lungo = individuo;
@@ -411,10 +409,10 @@ void aggiorna_descrizione_nuovo_individuo(caratteristiche_individuo individuo) {
         ((*descrizione).individui_b_attivi)++;
     }
     sem_rilascia(sem_shm_descrizione_id);
+    shm_detach_descrizione_simulazione(descrizione);
 }
 
 void attivita_terminatore_individui(int init_people, int birth_death, unsigned long genes, descrizione_simulazione* descrizione) {
-    // Set Handler per il segnale di terminazione
     for(;;) {
         sleep(birth_death);
         char tipo_processo_scelto = scelta_tipo_processo();
@@ -428,7 +426,7 @@ void attivita_terminatore_individui(int init_people, int birth_death, unsigned l
             }
         }
         caratteristiche_individuo nuovo_individuo = crea_individuo(genes);
-        avvia_individuo(nuovo_individuo, init_people);
+        avvia_individuo(nuovo_individuo, init_people, FALSE);
         aggiorna_utente_stato_simulazione();
     }
 }
@@ -437,7 +435,7 @@ void aggiorna_utente_stato_simulazione() {
     int shm_descrizione_id = shm_recupero_descrizione(SHM_DESCRIZIONE_KEY);
     int sem_shm_descrizione_id = sem_recupero(SEM_SHM_DESCRIZIONE);
     descrizione_simulazione* descrizione = NULL;
-    shm_attach(shm_descrizione_id, descrizione);
+    shm_attach_descrizione_simulazione(shm_descrizione_id, &descrizione);
     sem_riserva(sem_shm_descrizione_id);
     printf("\nAggiornamento:\n");
     printf("Individui di tipo A attivi: %i\n", (*descrizione).individui_a_attivi);
@@ -445,6 +443,8 @@ void aggiorna_utente_stato_simulazione() {
     printf("Individui di tipo A creati: %i\n", (*descrizione).individui_a_creati);
     printf("Individui di tipo B creati: %i\n", (*descrizione).individui_b_creati);
     printf("Individui totali terminati: %i\n", (*descrizione).processi_totali_terminati);
+    sem_rilascia(sem_shm_descrizione_id);
+    shm_detach_descrizione_simulazione(descrizione);
 }
 
 #endif
