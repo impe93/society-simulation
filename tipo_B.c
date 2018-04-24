@@ -51,13 +51,16 @@ int main(int argc, char** argv){
     caratteristiche_individuo individuo_B;
     individuo_per_accoppiamento individuo_A;
     bool richiesta_accettata = FALSE;
+    bool capostipite = FALSE;
 
     /*
     Recupero dei parametri passati dal gestore per la creazione (tipo, nome, genoma) dell'individuo
     */
-    if(argc == 4) {
+    if(argc == 5) {
         inserimento_caratteristiche_individuo(&individuo_B, argv);
         individui_in_shm = atoi(*(argv+3));
+        if(atoi(*(argv+4)) == 0 || atoi(*(argv+4)) == 1)
+            capostipite = atoi(*(argv+4));
     } else {
         printf("numero di argomenti passati al processo B errato\n");
         exit(EXIT_FAILURE);
@@ -74,9 +77,11 @@ int main(int argc, char** argv){
     Sincronizzazione con il gestore per inserimento in shm B delle informazioni di tutti i processi 
     creati da quest'ultimo prima di proseguire con l'esecuzione
     */
-    sem_rilascia(sem_sinc_padre_id);
-    sem_riserva(sem_sinc_figli_id);
-
+    if(capostipite){
+        sem_rilascia(sem_sinc_padre_id);
+        sem_riserva(sem_sinc_figli_id);
+    }
+    /*
     while(!richiesta_accettata){
         sem_riserva(sem_shm_A);
         sem_riserva(sem_shm_B);
@@ -104,6 +109,8 @@ int main(int argc, char** argv){
     shm_detach_rappresentazione_individuo(p_shm_A);
     shm_detach_rappresentazione_individuo(p_shm_B);
     exit(EXIT_SUCCESS);
+    */
+   for(;;);
 }
 
 void signal_handler(int sig){
@@ -121,6 +128,5 @@ void signal_handler(int sig){
 
     sem_rilascia(sem_shm_B);
     shm_detach_rappresentazione_individuo(p_shm_B);
-
     exit(EXIT_SUCCESS);
 }

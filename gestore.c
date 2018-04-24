@@ -25,19 +25,20 @@ void term_handler (int sig) {
     
     rappresentazione_individuo* individui_A;
     rappresentazione_individuo* individui_B;
-    shm_attach_rappresentazione_individuo(shm_recupero(SHM_A_KEY, init_people), &individui_A);
-    shm_attach_rappresentazione_individuo(shm_recupero(SHM_B_KEY, init_people), &individui_B);
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_A_KEY, init_people - 1), &individui_A);
+    shm_attach_rappresentazione_individuo(shm_recupero(SHM_B_KEY, init_people - 1), &individui_B);
     while(individui_terminati == FALSE) {
         sem_riserva(sem_shm_a_id);
         sem_riserva(sem_shm_b_id);
-        int numero_individui_A = conta_individui_attivi(individui_A, init_people);
-        int numero_individui_B = conta_individui_attivi(individui_B, init_people);
+        int numero_individui_A = conta_individui_attivi(individui_A, init_people - 1);
+        int numero_individui_B = conta_individui_attivi(individui_B, init_people - 1);
         if (numero_individui_A == 0 && numero_individui_B == 0) {
             individui_terminati = TRUE;
         }
         sem_rilascia(sem_shm_a_id);
         sem_rilascia(sem_shm_b_id);
     }
+    
     while(wait(NULL) != -1);
 
     msg_rimuovi_coda(msg_recupera_coda(1240));
@@ -48,19 +49,18 @@ void term_handler (int sig) {
     sem_cancella(sem_recupero(1238));
     sem_cancella(sem_recupero(1239));
     sem_cancella(sem_recupero(1244));
-    shm_remove(shm_recupero(1234, 12));
+    shm_remove(shm_recupero(1234, init_people - 1));
     shm_remove(shm_recupero_descrizione(1243));
-    shm_remove(shm_recupero(1235, 12));
+    shm_remove(shm_recupero(1235, init_people - 1));
     exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char** argv) {
-    
+
     if (signal(SIGTERM, term_handler) == (void*)-1) {
         printf("Errore durante l'assegnamento dell'handler al gestore.\n");
         exit(EXIT_FAILURE);
     }
-
     // Utilizzato e chiamato solo una volta per generare dei numeri casuali
     srand(time(NULL));
 
@@ -211,7 +211,6 @@ int main(int argc, char** argv) {
     for(int i = 0; i < init_people; i++) {
         sem_rilascia(sem_sinc_figli_id);
     }
-
     /**
      * Creazione del figlio che si occupa della terminazione casuale dei processi A e B.
      */
@@ -240,6 +239,10 @@ int main(int argc, char** argv) {
             exit(EXIT_FAILURE);
         }
         case 0: {
+            if (signal(SIGTERM, term_terminatore_handler) == (void*)-1) {
+                printf("Errore durante l'assegnazione dell'handler al terminatore di processi.\n");
+                exit(EXIT_FAILURE);
+            }
             terminazione_simulazione(sim_time, init_people, pid_gestore, pid_terminatore_processi);
             exit(EXIT_SUCCESS);
         }

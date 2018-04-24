@@ -78,47 +78,48 @@ int main(int argc, char** argv){
         sem_riserva(sem_sinc_figli_id);
     }
 
-    unsigned long soglia_accettazione_richiesta = individuo_A.genoma / 2;
-    bool richiesta_accettata = FALSE;
-    individuo_per_accoppiamento individuo_B;
+    
+    //unsigned long soglia_accettazione_richiesta = individuo_A.genoma / 2;
+    //bool richiesta_accettata = FALSE;
+    //individuo_per_accoppiamento individuo_B;
 
-    while(!richiesta_accettata){
+    //while(!richiesta_accettata){
         /*
         Legge dalla sua coda di messaggi se ha ricevuto una richiesta di accoppiamento da un B e 
         memorizza il messaggio ricevuto in una struct individuo_per_accoppiamento
         */
-        msg_ricevi_messaggio_individuo(msg_A_B, pid_A, &individuo_B);
+        //msg_ricevi_messaggio_individuo(msg_A_B, pid_A, &individuo_B);
         
         //Valuta se accoppiarsi con B calcolando se questo può rafforzare i suoi discendenti:
         //Accetta subito se B ha genoma munltiplo del suo
-        if(individuo_B.caratteristiche.genoma % individuo_A.genoma){
-            richiesta_accettata = TRUE;
-        } else{
-            unsigned long mcd_genomi_A_B = mcd(individuo_A.genoma, individuo_B.caratteristiche.genoma);
-            if(mcd_genomi_A_B >= soglia_accettazione_richiesta){
-                richiesta_accettata = TRUE;
-            } else{
-                richiesta_accettata = FALSE;
-            }
-        }
+        //if(individuo_B.caratteristiche.genoma % individuo_A.genoma){
+            //richiesta_accettata = TRUE;
+        //} else{
+            //unsigned long mcd_genomi_A_B = mcd(individuo_A.genoma, individuo_B.caratteristiche.genoma);
+            //if(mcd_genomi_A_B >= soglia_accettazione_richiesta){
+              //  richiesta_accettata = TRUE;
+            //} else{
+              //  richiesta_accettata = FALSE;
+            //}
+        //}
         /*
         Se la richiesta è stata accettata mando una risposta di accettazione di accoppiamento a B,
         altrimenti mando una risposta di rifiuto della richiesta a B e diminuisco la standard di 
         accettazione per l'accoppiamento del processo A (se necessario).
         */
-        if(richiesta_accettata){
-            msg_manda_messaggio_accoppiamento(msg_A_B, TRUE, individuo_B.pid);
-        } else{
-            msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
-            individui_B_rifiutati++;
-            if(individui_B_rifiutati == individui_in_shm){
-                soglia_accettazione_richiesta = soglia_accettazione_richiesta / 2;
-                individui_B_rifiutati = 0;
-            }
-            sem_rilascia(sem_shm_A);
-        }
-    }
-
+        //if(richiesta_accettata){
+          //  msg_manda_messaggio_accoppiamento(msg_A_B, TRUE, individuo_B.pid);
+        //} else{
+          //  msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
+            //individui_B_rifiutati++;
+            //if(individui_B_rifiutati == individui_in_shm){
+              //  soglia_accettazione_richiesta = soglia_accettazione_richiesta / 2;
+               // individui_B_rifiutati = 0;
+            //}
+            //sem_rilascia(sem_shm_A);
+        //}
+    //}
+    /*
     //processo A comunica al gestore l'avvenuto accoppiamento con un processo B
     informazioni_accoppiamento informazioni;
     informazioni.tipo_mittente = 'A';
@@ -128,6 +129,8 @@ int main(int argc, char** argv){
 
     shm_detach_rappresentazione_individuo(p_shm_A);
     exit(EXIT_SUCCESS);
+    */
+    for(;;);
 }
 
 void signal_handler(int sig){
@@ -142,16 +145,16 @@ void signal_handler(int sig){
     se un individuo B ha cercato di contattarmi dopo la ricezione del segnale rispondo
     rifiutando la sua richiesta di accoppiamento
     */
+    /*
     if(msg_controlla_presenza_messaggi(msg_A_B, pid_A, &individuo_B)){
         msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
     }
+    */
     /*
     Rimuovo le informazioni riguardanti il processo A dalla shm A
     */
     rimozione_da_shm_A(p_shm_A, pid_A, individui_in_shm);
-
     sem_rilascia(sem_shm_A);
     shm_detach_rappresentazione_individuo(p_shm_A);
-
     exit(EXIT_SUCCESS);
 }

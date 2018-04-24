@@ -3,8 +3,11 @@
 #define __TIPI_SIMULATORE_SOCIETA__
 
 #include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
 
-#define DEBUG printf("Sono arrivato alla linea %d del file %s.\n", __LINE__, __FILE__)
+#define DEBUG printf("Sono arrivato alla linea %d del file %s con PID %i.\n", __LINE__, __FILE__, getpid())
+#define ERRNO printf("Error number = %i\n", errno)
 
 
 

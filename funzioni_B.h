@@ -128,10 +128,6 @@ void rimozione_da_shm_B(rappresentazione_individuo* p_shm_B, pid_t pid_B, int in
     for(int i = 0; rimosso == FALSE && i < individui_B; i++){
         if(p_shm_B[i].pid == pid_B){
             p_shm_B[i].utilizzata = FALSE;
-            p_shm_B[i].pid = 0;
-            p_shm_B[i].caratteristiche.tipo = 'C';
-            strcpy(p_shm_B[i].caratteristiche.nome, "");
-            p_shm_B[i].caratteristiche.genoma = 0;
             rimosso = TRUE;
         }
     }
