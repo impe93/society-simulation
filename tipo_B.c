@@ -77,7 +77,7 @@ int main(int argc, char** argv){
     Sincronizzazione con il gestore per inserimento in shm B delle informazioni di tutti i processi 
     creati da quest'ultimo prima di proseguire con l'esecuzione
     */
-    if(capostipite){
+   if(capostipite){
         sem_rilascia(sem_sinc_padre_id);
         sem_riserva(sem_sinc_figli_id);
     }
