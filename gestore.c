@@ -30,8 +30,9 @@ void term_handler (int sig) {
     while(individui_terminati == FALSE) {
         sem_riserva(sem_shm_a_id);
         sem_riserva(sem_shm_b_id);
-        int numero_individui_A = conta_individui_attivi(individui_A, init_people - 1);
-        int numero_individui_B = conta_individui_attivi(individui_B, init_people - 1);
+        DEBUG;
+        int numero_individui_A = conta_individui_attivi(individui_A, init_people);
+        int numero_individui_B = conta_individui_attivi(individui_B, init_people);
         if (numero_individui_A == 0 && numero_individui_B == 0) {
             individui_terminati = TRUE;
         }
@@ -40,7 +41,7 @@ void term_handler (int sig) {
     }
     
     while(wait(NULL) != -1);
-
+    DEBUG;
     msg_rimuovi_coda(msg_recupera_coda(1240));
     msg_rimuovi_coda(msg_recupera_coda(1241));
     msg_rimuovi_coda(msg_recupera_coda(1242));
