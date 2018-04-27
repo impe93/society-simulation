@@ -74,9 +74,10 @@ void rimozione_da_shm_B(rappresentazione_individuo* p_shm_B, pid_t pid_B, int in
 
 
 void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
-    p->tipo = *argv[0];
+    printf("Genoma B = %s\n", *(argv + 2));
+    (*p).tipo = *argv[0];
     strcpy(p->nome, *(argv + 1));
-    p->genoma = atol(*(argv + 2));
+    (*p).genoma = atol(*(argv + 2));
 }
 
 void inserimento_in_shm_B(rappresentazione_individuo* p_shm_B, pid_t pid, caratteristiche_individuo individuo, int numero_B){

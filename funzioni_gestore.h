@@ -182,6 +182,28 @@ void aggiorna_descrizione_nuovo_individuo(caratteristiche_individuo individuo);
  */
 void aggiorna_utente_stato_simulazione();
 
+/**
+ * Recupera l'individuo con pid uguale al parametro "pid_a" dalla shm A
+ * 
+ * @param {pid_t} pid_a: Il pid di un individuo di tipo A che si trova sulla shm A
+ * @param {int} init_people: Il numero totale di individui
+ * @return {caratteristiche_individuo}: Le caratteristiche dell'individuo trovato
+ * nella shm con PID uguale al valore passato come parametro. Individuo vuoto se
+ * non è stato trovato l'individuo con il PID desiderato
+ */
+caratteristiche_individuo recupera_a(pid_t pid_a, int init_people);
+
+/**
+ * Recupera l'individuo con pid uguale al parametro "pid_b" dalla shm B
+ * 
+ * @param {pid_t} pid_b: Il pid di un individuo di tipo A che si trova sulla shm A
+ * @param {int} init_people: Il numero totale di individui
+ * @return {caratteristiche_individuo}: Le caratteristiche dell'individuo trovato
+ * nella shm con PID uguale al valore passato come parametro. Individuo vuoto se
+ * non è stato trovato l'individuo con il PID desiderato.
+ */
+caratteristiche_individuo recupera_b(pid_t pid_b, int init_people);
+
 // Definizione metodi
 
 bool isUnsignedNumber(char* stringa) {
@@ -203,12 +225,13 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people, bool
             exit(EXIT_FAILURE);
         }
         case 0: {
-            char stringa_genoma [20];
+            char* stringa_genoma = (char*)malloc(sizeof(char) * 128);
             char stringa_init_people [32];
             char inizializzazione_stringa [1];
-            sprintf(stringa_genoma, "%ld", individuo.genoma);
+            sprintf(stringa_genoma, "%lu", individuo.genoma);
             sprintf(stringa_init_people, "%i", init_people);
             sprintf(inizializzazione_stringa, "%i", inizializzazione);
+            printf("Genoma = %ld\nStringa genoma = %s\n\n", individuo.genoma, stringa_genoma);
             if (individuo.tipo == 'A') {
                 sem_riserva(sem_recupero(SEM_SHM_A));
                 if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione_stringa, NULL) == -1) {
@@ -217,6 +240,38 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people, bool
                 }
             } else if (individuo.tipo == 'B') {
                 sem_riserva(sem_recupero(SEM_SHM_B));
+                if (execl("./tipo_B", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione_stringa, NULL) == -1) {
+                    printf("Errore durante la creazione del nuovo individuo B.\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+        default: {
+            aggiorna_descrizione_nuovo_individuo(individuo);
+        }
+    }
+}
+
+void avvia_individuo_accoppiamento(caratteristiche_individuo individuo, int init_people) {
+    pid_t pid_figlio = 0;
+    switch(pid_figlio = fork()) {
+        case -1: {
+            printf("Errore durante la creazione di un nuovo figlio.\n");
+            exit(EXIT_FAILURE);
+        }
+        case 0: {
+            char* stringa_genoma = (char*)malloc(sizeof(char) * 128);
+            char stringa_init_people [32];
+            char inizializzazione_stringa [1];
+            sprintf(stringa_genoma, "%ld", individuo.genoma);
+            sprintf(stringa_init_people, "%i", init_people);
+            sprintf(inizializzazione_stringa, "%i", FALSE);
+            if (individuo.tipo == 'A') {
+                if (execl("./tipo_A", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione_stringa, NULL) == -1) {
+                    printf("Errore durante la creazione del nuovo individuo A.\n");
+                    exit(EXIT_FAILURE);
+                }
+            } else if (individuo.tipo == 'B') {
                 if (execl("./tipo_B", &individuo.tipo, individuo.nome, stringa_genoma, stringa_init_people, inizializzazione_stringa, NULL) == -1) {
                     printf("Errore durante la creazione del nuovo individuo B.\n");
                     exit(EXIT_FAILURE);
@@ -239,6 +294,7 @@ caratteristiche_individuo crea_individuo (unsigned long genes) {
     }
     individuo.genoma = (rand() % (genes + 1)) + 2;
     individuo.nome[0] = (char)(rand() % 25) + 65;
+
     return individuo;
 }
 
@@ -419,8 +475,10 @@ void aggiorna_descrizione_nuovo_individuo(caratteristiche_individuo individuo) {
     }
     if (individuo.tipo == 'A') {
         ((*descrizione).individui_a_attivi)++;
+        ((*descrizione).individui_a_creati)++;
     } else {
         ((*descrizione).individui_b_attivi)++;
+        ((*descrizione).individui_b_creati)++;
     }
     sem_rilascia(sem_shm_descrizione_id);
     shm_detach_descrizione_simulazione(descrizione);
@@ -459,6 +517,88 @@ void aggiorna_utente_stato_simulazione() {
     printf("Individui totali terminati: %i\n", (*descrizione).processi_totali_terminati);
     sem_rilascia(sem_shm_descrizione_id);
     shm_detach_descrizione_simulazione(descrizione);
+}
+
+caratteristiche_individuo recupera_a(pid_t pid_a, int init_people) {
+    caratteristiche_individuo individuo;
+    individuo.tipo = 'C';
+    rappresentazione_individuo* individui; 
+    int shm_a_id = shm_recupero(SHM_A_KEY, init_people);
+    shm_attach_rappresentazione_individuo(shm_a_id, &individui);
+    for (int i = 0; i < init_people - 1; i++) {
+        if (individui[i].utilizzata && individui[i].pid == pid_a) {
+            individuo = individui[i].caratteristiche;
+            individui[i].utilizzata = FALSE;
+        }
+    }
+    shm_detach_rappresentazione_individuo(individui);
+    return individuo;
+}
+
+caratteristiche_individuo recupera_b(pid_t pid_b, int init_people) {
+    caratteristiche_individuo individuo;
+    individuo.tipo = 'C';
+    rappresentazione_individuo* individui; 
+    int shm_b_id = shm_recupero(SHM_B_KEY, init_people);
+    shm_attach_rappresentazione_individuo(shm_b_id, &individui);
+    for (int i = 0; i < init_people - 1; i++) {
+        if (individui[i].utilizzata && individui[i].pid == pid_b) {
+            individuo = individui[i].caratteristiche;
+            individui[i].utilizzata = FALSE;
+        }
+    }
+    shm_detach_rappresentazione_individuo(individui);
+    return individuo;
+}
+
+unsigned long mcd(unsigned long a, unsigned long b) {
+    int r = 0;
+    while(b != 0) {
+         r = a % b;
+         a = b; 
+         b = r;
+    }
+    return a;
+}
+
+caratteristiche_individuo crea_individuo_da_coppia(caratteristiche_individuo individuo_a,caratteristiche_individuo individuo_b, unsigned long genes, bool scelta_nome) {
+    // Crea nuovi individui
+    caratteristiche_individuo nuovo_individuo;
+
+    // Concateno i nomi dei due individui e aggiungo una lettera casuale al fondo
+    // Potrebbe causare segmentation fault
+    if (scelta_nome) {
+        strcat(nuovo_individuo.nome, individuo_a.nome);
+    } else {
+        strcat(nuovo_individuo.nome, individuo_b.nome);
+    }
+    char char_string[2];
+    char_string[0] = (char)(rand() % 25) + 65;
+    char_string[1] = '\0';
+    strcat(nuovo_individuo.nome, char_string);
+
+    // Calcolo il Genoma del nuovo individuo
+    unsigned long mcd_a_b = 0;
+    if (individuo_b.genoma % individuo_a.genoma == 0) {
+        mcd_a_b = individuo_a.genoma;
+    } else {
+        if (individuo_a.genoma >= individuo_b.genoma) {
+            mcd_a_b = mcd(individuo_a.genoma, individuo_b.genoma);
+        } else {
+            mcd_a_b = mcd(individuo_b.genoma, individuo_a.genoma);
+        }
+    }
+
+    nuovo_individuo.genoma = (rand() % genes) + mcd_a_b;
+
+    // Calcolo tipo dell'individuo
+    if (rand() % 2) {
+        nuovo_individuo.tipo = 'A';
+    } else {
+        nuovo_individuo.tipo = 'B';
+    }
+
+    return nuovo_individuo;
 }
 
 #endif

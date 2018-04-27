@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "tipi_simulatore_societa.h"
 #include "funzioni_gestore.h"
@@ -250,6 +251,42 @@ int main(int argc, char** argv) {
         default: break;
     }
 
-    while(wait(NULL) != -1);
+    /**
+     * Gestione dell'accoppiamento
+     */
+    while(TRUE) {
+        informazioni_accoppiamento informazioni_a;
+        informazioni_accoppiamento informazioni_b;
+        msg_ricevi_messaggio_notifica_accoppiamento(msg_gestore_a, &informazioni_a);
+        msg_ricevi_messaggio_notifica_accoppiamento(msg_gestore_b, &informazioni_b);
+
+        if (informazioni_a.pid_mittente == informazioni_b.pid_coniuge) {
+            // Recupera individui e rimuovi i genitori dalla shm
+            caratteristiche_individuo individuo_a = recupera_a(informazioni_a.pid_mittente, init_people);
+            caratteristiche_individuo individuo_b = recupera_b(informazioni_b.pid_mittente, init_people);
+            
+            // Crea nuovi individui
+            caratteristiche_individuo nuovo_individuo_1 = crea_individuo_da_coppia(individuo_a, individuo_b, genes, 0);
+            caratteristiche_individuo nuovo_individuo_2 = crea_individuo_da_coppia(individuo_a, individuo_b, genes, 1);
+
+            // Aggiungi individui in memoria
+            if (nuovo_individuo_1.tipo == 'A' && nuovo_individuo_2.tipo == 'B' || nuovo_individuo_1.tipo == 'B' && nuovo_individuo_2.tipo == 'A') {
+                avvia_individuo_accoppiamento(nuovo_individuo_1, init_people);
+                avvia_individuo_accoppiamento(nuovo_individuo_2, init_people);
+            } else if (nuovo_individuo_1.tipo == 'A' && nuovo_individuo_2.tipo == 'A') {
+                avvia_individuo_accoppiamento(nuovo_individuo_1, init_people);
+                avvia_individuo(nuovo_individuo_2, init_people, FALSE);
+                sem_rilascia(sem_shm_b_id);
+            } else {
+                avvia_individuo_accoppiamento(nuovo_individuo_1, init_people);
+                avvia_individuo(nuovo_individuo_2, init_people, FALSE);
+                sem_rilascia(sem_shm_a_id);
+            }
+
+        } else {
+            printf("Errore durante il recupero delle informazioni sull'accoppiamento.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
     
 }

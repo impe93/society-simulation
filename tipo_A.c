@@ -78,59 +78,72 @@ int main(int argc, char** argv){
         sem_riserva(sem_sinc_figli_id);
     }
 
-    
-    //unsigned long soglia_accettazione_richiesta = individuo_A.genoma / 2;
-    //bool richiesta_accettata = FALSE;
-    //individuo_per_accoppiamento individuo_B;
+    unsigned long soglia_accettazione_richiesta = individuo_A.genoma / 2;
+    bool richiesta_accettata = FALSE;
+    individuo_per_accoppiamento individuo_B;
 
-    //while(!richiesta_accettata){
+    while(!richiesta_accettata){
         /*
         Legge dalla sua coda di messaggi se ha ricevuto una richiesta di accoppiamento da un B e 
         memorizza il messaggio ricevuto in una struct individuo_per_accoppiamento
         */
-        //msg_ricevi_messaggio_individuo(msg_A_B, pid_A, &individuo_B);
+        msg_ricevi_messaggio_individuo(msg_A_B, pid_A, &individuo_B);
+        // Valuta se accoppiarsi con B calcolando se questo può rafforzare i suoi discendenti:
+        // Accetta subito se B ha genoma munltiplo del suo
+        printf("PID B = %d\n", individuo_B.pid);
+        printf("Genoma B = %ld\n", individuo_B.caratteristiche.genoma);
+        printf("Tipo B = %c\n", individuo_B.caratteristiche.tipo);
+        printf("Nome B = %s\n", individuo_B.caratteristiche.nome);
+        if(individuo_B.caratteristiche.genoma % individuo_A.genoma == 0){
+            richiesta_accettata = TRUE;
+            DEBUG;
+        } else{
+            unsigned long mcd_genomi_A_B = 0;
+            DEBUG;
+            if (individuo_A.genoma >= individuo_B.caratteristiche.genoma) {
+                mcd_genomi_A_B = mcd(individuo_A.genoma, individuo_B.caratteristiche.genoma);
+            } else {
+                mcd_genomi_A_B = mcd(individuo_B.caratteristiche.genoma, individuo_A.genoma);
+            }
+            printf("MCD = %ld\n", mcd_genomi_A_B);
+            if(mcd_genomi_A_B >= soglia_accettazione_richiesta){
+                richiesta_accettata = TRUE;
+            } else{
+                richiesta_accettata = FALSE;
+            }
+        }
         
-        //Valuta se accoppiarsi con B calcolando se questo può rafforzare i suoi discendenti:
-        //Accetta subito se B ha genoma munltiplo del suo
-        //if(individuo_B.caratteristiche.genoma % individuo_A.genoma){
-            //richiesta_accettata = TRUE;
-        //} else{
-            //unsigned long mcd_genomi_A_B = mcd(individuo_A.genoma, individuo_B.caratteristiche.genoma);
-            //if(mcd_genomi_A_B >= soglia_accettazione_richiesta){
-              //  richiesta_accettata = TRUE;
-            //} else{
-              //  richiesta_accettata = FALSE;
-            //}
-        //}
         /*
         Se la richiesta è stata accettata mando una risposta di accettazione di accoppiamento a B,
         altrimenti mando una risposta di rifiuto della richiesta a B e diminuisco la standard di 
         accettazione per l'accoppiamento del processo A (se necessario).
         */
-        //if(richiesta_accettata){
-          //  msg_manda_messaggio_accoppiamento(msg_A_B, TRUE, individuo_B.pid);
-        //} else{
-          //  msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
-            //individui_B_rifiutati++;
-            //if(individui_B_rifiutati == individui_in_shm){
-              //  soglia_accettazione_richiesta = soglia_accettazione_richiesta / 2;
-               // individui_B_rifiutati = 0;
-            //}
-            //sem_rilascia(sem_shm_A);
-        //}
-    //}
-    /*
-    //processo A comunica al gestore l'avvenuto accoppiamento con un processo B
+        DEBUG;
+        if(richiesta_accettata){
+            msg_manda_messaggio_accoppiamento(msg_A_B, TRUE, individuo_B.pid);
+            DEBUG;
+        } else{
+            msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
+            DEBUG;
+            individui_B_rifiutati++;
+            if(individui_B_rifiutati == individui_in_shm){
+                soglia_accettazione_richiesta = soglia_accettazione_richiesta / 2;
+                individui_B_rifiutati = 0;
+            }
+            sem_rilascia(sem_shm_A);
+        }
+    }
+
+    // Processo A comunica al gestore l'avvenuto accoppiamento con un processo B
     informazioni_accoppiamento informazioni;
     informazioni.tipo_mittente = 'A';
     informazioni.pid_mittente = pid_A;
     informazioni.pid_coniuge = individuo_B.pid;
     msg_manda_messaggio_notifica_accoppiamento(msg_gestore_A, informazioni);
+    
 
     shm_detach_rappresentazione_individuo(p_shm_A);
     exit(EXIT_SUCCESS);
-    */
-    for(;;);
 }
 
 void signal_handler(int sig){
@@ -145,11 +158,9 @@ void signal_handler(int sig){
     se un individuo B ha cercato di contattarmi dopo la ricezione del segnale rispondo
     rifiutando la sua richiesta di accoppiamento
     */
-    /*
     if(msg_controlla_presenza_messaggi(msg_A_B, pid_A, &individuo_B)){
         msg_manda_messaggio_accoppiamento(msg_A_B, FALSE, individuo_B.pid);
     }
-    */
     /*
     Rimuovo le informazioni riguardanti il processo A dalla shm A
     */

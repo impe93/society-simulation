@@ -49,9 +49,9 @@ void rimozione_da_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid_A, int in
 
 
 void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
-    p->tipo = *argv[0];
+    (*p).tipo = *argv[0];
     strcpy(p->nome, *(argv + 1));
-    p->genoma = atol(*(argv + 2));
+    (*p).genoma = atol(*(argv + 2));
 }
 
 void inserimento_in_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid, caratteristiche_individuo individuo, int numero_A){
@@ -66,12 +66,14 @@ void inserimento_in_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid, caratt
     }
 }
 
-unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B){
-    if (genoma_B == genoma_A)
-        return genoma_B;
-    if (genoma_A < genoma_B)  
-        return mcd(genoma_A - genoma_B, genoma_B);
-    return mcd(genoma_A, genoma_B - genoma_A);
+unsigned long mcd(unsigned long a, unsigned long b) {
+    int r = 0;
+    while(b != 0) {
+         r = a % b;
+         a = b; 
+         b = r;
+    }
+    return a;
 }
 
 void rimozione_da_shm_A(rappresentazione_individuo* p_shm_A, pid_t pid_A, int individui_A){

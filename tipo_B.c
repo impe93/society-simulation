@@ -81,18 +81,18 @@ int main(int argc, char** argv){
         sem_rilascia(sem_sinc_padre_id);
         sem_riserva(sem_sinc_figli_id);
     }
-    /*
+    
     while(!richiesta_accettata){
         sem_riserva(sem_shm_A);
         sem_riserva(sem_shm_B);
-        
+
         seleziona_individuo_A_ideale(p_shm_A, &individuo_A, individuo_B.genoma, individui_in_shm);
         
         individuo_per_accoppiamento messaggio_accoppiamento;
         inserimento_in_messaggio_accoppiamento(&messaggio_accoppiamento, pid_B, individuo_B);
         msg_manda_messaggio_individuo(msg_A_B, messaggio_accoppiamento, individuo_A.pid);
-
         msg_ricevi_messaggio_accoppiamento(msg_A_B, pid_B, &richiesta_accettata);
+        DEBUG;
 
         if(!richiesta_accettata){
             sem_rilascia(sem_shm_B);
@@ -109,8 +109,6 @@ int main(int argc, char** argv){
     shm_detach_rappresentazione_individuo(p_shm_A);
     shm_detach_rappresentazione_individuo(p_shm_B);
     exit(EXIT_SUCCESS);
-    */
-   for(;;);
 }
 
 void signal_handler(int sig){
