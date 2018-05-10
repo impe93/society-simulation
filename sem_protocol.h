@@ -11,6 +11,7 @@
 #include <sys/sem.h>
 #include <ctype.h>
 
+#ifndef __APPLE__
 union semun {
     int val;
     struct semid_ds* buf;
@@ -20,6 +21,7 @@ union semun {
     struct seminfo* __buf;
     #endif
 };
+#endif
 
 // Initialize semaphore to 1 (i.e., "available")
 int initSemAvailable(int semId, int semNum) {

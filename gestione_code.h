@@ -227,8 +227,12 @@ void msg_ricevi_messaggio_accoppiamento(int id, long tipo, bool* messaggio_ricev
 void msg_ricevi_messaggio_notifica_accoppiamento(int id, informazioni_accoppiamento* informazioni) {
     msg_notifica_accoppiamento da_ricevere;
     if (msgrcv(id, &da_ricevere, sizeof(msg_notifica_accoppiamento) - sizeof(long), 0, 0) == -1) {
-        printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
-        exit(EXIT_FAILURE);
+        if (!(errno == EINTR)) {
+            ERRNO;
+            DEBUG;
+            printf("Errore durante la ricezione di un messaggio sulla coda con ID = %i.\n", id);
+            exit(EXIT_FAILURE);
+        }
     }
     *informazioni = da_ricevere.informazioni;
 }

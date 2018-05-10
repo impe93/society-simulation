@@ -39,6 +39,7 @@ int sem_recupero(int chiave) {
     int id = 0;
     if((id = semget(chiave, 1, 0)) == -1) {
         printf("Erorre durante il recupero del semaforo con ID = %i.\n", chiave);
+        DEBUG;
         exit(EXIT_FAILURE);
     }
     return id;
@@ -78,7 +79,7 @@ void sem_init_occupato(int id) {
  */
 void sem_riserva(int id) {
     if (reserveSem(id, 0) == -1) {
-        printf("Errore durante la riserva del semaforo con ID = %i.\n", id);
+        printf("Errore durante la riserva del semaforo con ID = %i e PID = %i.\n", id, getpid());
         exit(EXIT_FAILURE);
     }
 }

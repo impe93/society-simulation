@@ -15,7 +15,10 @@ int main() {
     sem_cancella(sem_recupero(1238));
     sem_cancella(sem_recupero(1239));
     sem_cancella(sem_recupero(1244));
-    shm_remove(shm_recupero(1234, 11));
+    sem_cancella(sem_recupero(1245));
+    sem_cancella(sem_recupero(1246));
+    sem_cancella(sem_recupero(1247));
+    shm_remove(shm_recupero(1234, 0));
     shm_remove(shm_recupero_descrizione(1243));
-    shm_remove(shm_recupero(1235, 11));
+    shm_remove(shm_recupero(1235, 0));
 }

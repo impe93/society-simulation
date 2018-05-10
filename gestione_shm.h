@@ -97,7 +97,8 @@ int shm_recupero_descrizione(int chiave) {
  */
 void shm_attach_rappresentazione_individuo(int shmid, rappresentazione_individuo** p) {
     if(((*p) = (rappresentazione_individuo*) shmat(shmid, NULL, 0)) == (void*)-1) {
-        printf("errore in attacco del segmento di shm con id %i\n", shmid);
+        ERRNO;
+        printf("errore in attacco del segmento di shm con id %i nel pid %i\n", shmid, getpid());
         exit(EXIT_FAILURE);
     }
 }
@@ -114,7 +115,8 @@ void shm_attach_rappresentazione_individuo(int shmid, rappresentazione_individuo
  */
 void shm_attach_descrizione_simulazione(int shmid, descrizione_simulazione** p) {
     if(((*p) = (descrizione_simulazione*) shmat(shmid, NULL, 0)) == (void*)-1) {
-        printf("errore in attacco del segmento di shm con id %i\n", shmid);
+        ERRNO;
+        printf("errore in attacco del segmento di shm con id %i nel pid %i\n", shmid, getpid());
         exit(EXIT_FAILURE);
     }
 }

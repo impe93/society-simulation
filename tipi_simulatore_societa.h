@@ -20,10 +20,15 @@
 #define SEM_SHM_A 1238
 #define SEM_SHM_B 1239
 #define SEM_SHM_DESCRIZIONE 1244
+#define SEM_AZIONE_A 1245
+#define SEM_AZIONE_B 1246
+#define SEM_AZIONE 1247
 
 #define MSG_A_B 1240
 #define MSG_GESTORE_A 1241
 #define MSG_GESTORE_B 1242
+
+#define LUNGHEZZA_NOME 128
 
 typedef enum { FALSE, TRUE } bool;
 
@@ -32,7 +37,7 @@ typedef enum { FALSE, TRUE } bool;
  */
 typedef struct {
     char tipo;
-    char nome [128];
+    char nome [LUNGHEZZA_NOME];
     unsigned long genoma;
 } caratteristiche_individuo;
 

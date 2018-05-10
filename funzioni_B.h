@@ -74,7 +74,6 @@ void rimozione_da_shm_B(rappresentazione_individuo* p_shm_B, pid_t pid_B, int in
 
 
 void inserimento_caratteristiche_individuo(caratteristiche_individuo* p, char** argv){
-    printf("Genoma B = %s\n", *(argv + 2));
     (*p).tipo = *argv[0];
     strcpy(p->nome, *(argv + 1));
     (*p).genoma = atol(*(argv + 2));
@@ -92,22 +91,28 @@ void inserimento_in_shm_B(rappresentazione_individuo* p_shm_B, pid_t pid, caratt
     }
 }
 
-unsigned long mcd(unsigned long genoma_A, unsigned long genoma_B){
-    if (genoma_B == genoma_A)
-        return genoma_B;
-    if (genoma_A < genoma_B)  
-        return mcd(genoma_A - genoma_B, genoma_B);
-    return mcd(genoma_A, genoma_B - genoma_A);
+unsigned long mcd(unsigned long a, unsigned long b){
+    int r = 0;
+    while(b != 0) {
+         r = a % b;
+         a = b; 
+         b = r;
+    }
+    return a;
 }
 
 void seleziona_individuo_A_ideale(rappresentazione_individuo* p_shm_A, individuo_per_accoppiamento* individuo_A, 
                     unsigned long genoma_B, int numero_A){
-    
     int indice_A_ideale = 0;
     int genoma_massimo = 0;
     for(int i = 0; i < numero_A; i++){
         if(p_shm_A[i].utilizzata == TRUE){
-            int mcd_genomi = mcd(p_shm_A[i].caratteristiche.genoma, genoma_B);
+            int mcd_genomi = 0;
+            if (p_shm_A[i].caratteristiche.genoma > genoma_B) {
+                mcd_genomi = mcd(p_shm_A[i].caratteristiche.genoma, genoma_B);
+            } else {
+                mcd_genomi = mcd(genoma_B, p_shm_A[i].caratteristiche.genoma);
+            }
             if(mcd_genomi >= genoma_massimo){
                 genoma_massimo = mcd_genomi;
                 indice_A_ideale = i;
