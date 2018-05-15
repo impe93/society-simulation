@@ -196,12 +196,10 @@ int main (int argc, char** argv) {
 }
 
 void signal_handler (int sig) {
-
-  int msg_A_B = msg_recupera_coda(MSG_A_B);
+  
   int shm_A = shm_recupero(SHM_A_KEY, 1);
   int sem_shm_A = sem_recupero(SEM_SHM_A);
   rappresentazione_individuo* p_shm_A;
-  individuo_per_accoppiamento individuo_B;
 
   shm_attach_rappresentazione_individuo(shm_A, &p_shm_A);
   
