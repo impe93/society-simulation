@@ -299,8 +299,8 @@ int main(int argc, char** argv) {
 
     if (informazioni_a.pid_mittente == informazioni_b.pid_coniuge) {
       // Recupera individui e rimuovi i genitori dalla shm
-      caratteristiche_individuo individuo_a = recupera_a(informazioni_a.pid_mittente, init_people, descrizione, sem_shm_descrizione_id);
-      caratteristiche_individuo individuo_b = recupera_b(informazioni_b.pid_mittente, init_people, descrizione, sem_shm_descrizione_id);
+      caratteristiche_individuo individuo_a = recupera(informazioni_a.pid_mittente, init_people, descrizione, sem_shm_descrizione_id, 'A');
+      caratteristiche_individuo individuo_b = recupera(informazioni_b.pid_mittente, init_people, descrizione, sem_shm_descrizione_id, 'B');
       char tipo_scelto = 'C';
       // Crea nuovi individui
       caratteristiche_individuo nuovo_individuo_1;

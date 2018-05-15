@@ -38,7 +38,7 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people, int 
  * limitare il valore casuale
  * @param {int} init_people: 
  */
-caratteristiche_individuo crea_individuo (unsigned long genes, int init_people);
+caratteristiche_individuo crea_individuo (unsigned long genes, int init_people, char tipo);
 
 /**
  * Inizializza tanti individui in base a quanto è segnato nel parametro init_people
@@ -140,16 +140,7 @@ void attivita_terminatore_individui(int init_people, int birth_death, unsigned l
  * @param {int} init_people: La lunghezza massima che può avere l'array di individui
  * @param {descrizione_simulazione*} descrizione: La struttura che descrive la simulazione
  */
-void preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione);
-
-/**
- * Chiamato quando un processo casuale di tipo B deve terminare, il metodo lo sceglie,
- * lo termina ed aggiorna la descrizione.
- * 
- * @param {int} init_people: La lunghezza massima che può avere l'array di individui
- * @param {descrizione_simulazione*} descrizione: La struttura che descrive la simulazione
- */
-void preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione);
+void preparazione_terminazione(int init_people, descrizione_simulazione* descrizione, char tipo_terminazione);
 
 /**
  * Misura la lunghezza della stringa passata come paramentro
@@ -191,18 +182,13 @@ void aggiorna_utente_stato_simulazione();
  * nella shm con PID uguale al valore passato come parametro. Individuo vuoto se
  * non è stato trovato l'individuo con il PID desiderato
  */
-caratteristiche_individuo recupera_a(pid_t pid_a, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id);
+caratteristiche_individuo recupera(pid_t pid_a, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id, char tipo);
 
-/**
- * Recupera l'individuo con pid uguale al parametro "pid_b" dalla shm B
- * 
- * @param {pid_t} pid_b: Il pid di un individuo di tipo A che si trova sulla shm A
- * @param {int} init_people: Il numero totale di individui
- * @return {caratteristiche_individuo}: Le caratteristiche dell'individuo trovato
- * nella shm con PID uguale al valore passato come parametro. Individuo vuoto se
- * non è stato trovato l'individuo con il PID desiderato.
- */
-caratteristiche_individuo recupera_b(pid_t pid_b, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id);
+
+
+
+
+
 
 // Definizione metodi
 
@@ -251,7 +237,7 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people, int 
     }
 }
 
-caratteristiche_individuo crea_individuo (unsigned long genes, int init_people) {
+caratteristiche_individuo crea_individuo (unsigned long genes, int init_people, char tipo) {
     caratteristiche_individuo individuo;
 
     int shm_a_id = shm_recupero(SHM_A_KEY, init_people - 1);
@@ -262,18 +248,24 @@ caratteristiche_individuo crea_individuo (unsigned long genes, int init_people) 
     shm_attach_rappresentazione_individuo(shm_b_id, &individui_B);
     int numero_A = conta_individui_attivi(individui_A, init_people);
     int numero_B = conta_individui_attivi(individui_B, init_people);
-
-    if (rand() % 2) {
-        if (numero_B > 0) {
-            individuo.tipo = 'A';
-        } else {
-            individuo.tipo = 'B';
-        }
+    
+    if (tipo == 'A') {
+        individuo.tipo = 'A';
+    } else if (tipo == 'B') {
+        individuo.tipo = 'B';
     } else {
-        if (numero_A > 0) {
-            individuo.tipo = 'B';
+        if (rand() % 2) {
+            if (numero_B > 0) {
+                individuo.tipo = 'A';
+            } else {
+                individuo.tipo = 'B';
+            }
         } else {
-            individuo.tipo = 'A';
+            if (numero_A > 0) {
+                individuo.tipo = 'B';
+            } else {
+                individuo.tipo = 'A';
+            }
         }
     }
     individuo.genoma = (rand() % (genes + 1)) + 2;
@@ -287,57 +279,17 @@ caratteristiche_individuo crea_individuo (unsigned long genes, int init_people) 
     return individuo;
 }
 
-caratteristiche_individuo crea_individuo_init (unsigned long genes) {
-    caratteristiche_individuo individuo;
-
-    if (rand() % 2) {
-        individuo.tipo = 'A';
-    } else {
-        individuo.tipo = 'B';
-    }
-    individuo.genoma = (rand() % (genes + 1)) + 2;
-    strcpy(individuo.nome, "");
-    individuo.nome[0] = (char)(rand() % 25) + 65;
-    individuo.nome[1] = '\0';
-
-    return individuo;
-}
-
-caratteristiche_individuo crea_A (unsigned long genes) {
-    caratteristiche_individuo individuo;
-
-    individuo.tipo = 'A';
-    individuo.genoma = (rand() % (genes + 1)) + 2;
-    strcpy(individuo.nome, "");
-    individuo.nome[0] = (char)(rand() % 25) + 65;
-    individuo.nome[1] = '\0';
-
-    return individuo;
-}
-
-caratteristiche_individuo crea_B (unsigned long genes) {
-    caratteristiche_individuo individuo;
-
-    individuo.tipo = 'B';
-    individuo.genoma = (rand() % (genes + 1)) + 2;
-    strcpy(individuo.nome, "");
-    individuo.nome[0] = (char)(rand() % 25) + 65;
-    individuo.nome[1] = '\0';
-
-    return individuo;
-}
-
 void inizializza_individui(int init_people, unsigned long genes) {
     int sem_shm_a_id = sem_recupero(SEM_SHM_A);
     int sem_shm_b_id = sem_recupero(SEM_SHM_B);
-    caratteristiche_individuo individuo_A = crea_A(genes);
-    caratteristiche_individuo individuo_B = crea_B(genes);
+    caratteristiche_individuo individuo_A = crea_individuo(genes, init_people, 'A');
+    caratteristiche_individuo individuo_B = crea_individuo(genes, init_people, 'B');
     sem_riserva(sem_shm_b_id);
     avvia_individuo(individuo_B, init_people, 0);
     sem_riserva(sem_shm_a_id);
     avvia_individuo(individuo_A, init_people, 0);
     for(int i = 0; i < init_people - 2; i++) {
-        caratteristiche_individuo individuo = crea_individuo_init(genes);
+        caratteristiche_individuo individuo = crea_individuo(genes, init_people, 'C');
         if (individuo.tipo == 'A') {
             sem_riserva(sem_shm_a_id);
         } else {
@@ -369,14 +321,20 @@ void invio_segnale(pid_t pid, int segnale) {
 
 void terminazione_simulazione(int sim_time, int init_people, pid_t pid_gestore, pid_t pid_terminatore_processi) {
     sleep(sim_time);
+
     rappresentazione_individuo* shm_a;
     rappresentazione_individuo* shm_b;
+    descrizione_simulazione* descrizione;
 
+    int sem_shm_descrizione_id = sem_recupero(SEM_SHM_DESCRIZIONE);
+    int shm_descrizione_id = shm_recupero_descrizione(SHM_DESCRIZIONE_KEY);
     int sem_shm_a_id = sem_recupero(SEM_SHM_A);
     int sem_shm_b_id = sem_recupero(SEM_SHM_B);
     int sem_azione_id = sem_recupero(SEM_AZIONE);
     int sem_azione_a_id = sem_recupero(SEM_AZIONE_A);
     int sem_azione_b_id = sem_recupero(SEM_AZIONE_B);
+
+    shm_attach_descrizione_simulazione(shm_descrizione_id, &descrizione);
 
     shm_attach_rappresentazione_individuo(shm_recupero(SHM_A_KEY, init_people - 1), &shm_a);
     shm_attach_rappresentazione_individuo(shm_recupero(SHM_B_KEY, init_people - 1), &shm_b);
@@ -392,20 +350,26 @@ void terminazione_simulazione(int sim_time, int init_people, pid_t pid_gestore, 
     sem_rilascia(sem_shm_b_id);
     sem_rilascia(sem_shm_a_id);
 
+    sem_riserva(sem_shm_descrizione_id);
     for(int i = 0; i < init_people - 1; i++) {
         sem_riserva(sem_shm_a_id);
         sem_riserva(sem_shm_b_id);
         if (shm_a[i].utilizzata) {
             invio_segnale(shm_a[i].pid, SIGTERM);
+            (*descrizione).processi_totali_terminati++;
+            (*descrizione).individui_a_attivi--;
         } else {
             sem_rilascia(sem_shm_a_id);
         }
         if (shm_b[i].utilizzata) {
             invio_segnale(shm_b[i].pid, SIGTERM);
+            (*descrizione).processi_totali_terminati++;
+            (*descrizione).individui_b_attivi--;
         } else {
             sem_rilascia(sem_shm_b_id);
         }
     }
+    sem_rilascia(sem_shm_descrizione_id);
 
     shm_detach_rappresentazione_individuo(shm_a);
     shm_detach_rappresentazione_individuo(shm_b);
@@ -460,24 +424,19 @@ void termina_individuo(rappresentazione_individuo individui [], int numero_da_te
     sem_rilascia(sem_shm_descrizione_id);
 }
 
-void preparazione_terminazione_a(int init_people, descrizione_simulazione* descrizione) {
-    int sem_shm_a_id = sem_recupero(SEM_SHM_A);
-    sem_riserva(sem_shm_a_id);
-    int shm_a_id = shm_recupero(SHM_A_KEY, init_people - 1);
+void preparazione_terminazione(int init_people, descrizione_simulazione* descrizione, char tipo_terminazione) {
+    int sem_shm_id = 0;
+    int shm_id = 0;
+    if (tipo_terminazione == 'A') {
+        sem_shm_id = sem_recupero(SEM_SHM_A);
+        shm_id = shm_recupero(SHM_A_KEY, init_people - 1);
+    } else {
+        sem_shm_id = sem_recupero(SEM_SHM_B);
+        shm_id = shm_recupero(SHM_B_KEY, init_people - 1);
+    }
+    sem_riserva(sem_shm_id);
     rappresentazione_individuo* individui;
-    shm_attach_rappresentazione_individuo(shm_a_id, &individui);
-    int individui_attivi = conta_individui_attivi(individui, init_people);
-    int numero_da_terminare = numero_random(1, individui_attivi);
-    termina_individuo(individui, numero_da_terminare, descrizione);
-    shm_detach_rappresentazione_individuo(individui);
-}
-
-void preparazione_terminazione_b(int init_people, descrizione_simulazione* descrizione) {
-    int sem_shm_b_id = sem_recupero(SEM_SHM_B);
-    sem_riserva(sem_shm_b_id);
-    int shm_b_id = shm_recupero(SHM_B_KEY, init_people - 1);
-    rappresentazione_individuo* individui;
-    shm_attach_rappresentazione_individuo(shm_b_id, &individui);
+    shm_attach_rappresentazione_individuo(shm_id, &individui);
     int individui_attivi = conta_individui_attivi(individui, init_people);
     int numero_da_terminare = numero_random(1, individui_attivi);
     termina_individuo(individui, numero_da_terminare, descrizione);
@@ -533,13 +492,13 @@ void attivita_terminatore_individui(int init_people, int birth_death, unsigned l
         sem_riserva(sem_recupero(SEM_AZIONE_A));
         sem_riserva(sem_recupero(SEM_AZIONE_B));
         if (tipo_processo_scelto == 'A') {
-            preparazione_terminazione_a(init_people, descrizione);
+            preparazione_terminazione(init_people, descrizione, 'A');
         } else {
-            preparazione_terminazione_b(init_people, descrizione);
+            preparazione_terminazione(init_people, descrizione, 'B');
         }
         sem_riserva(sem_shm_a_id);
         sem_riserva(sem_shm_b_id);
-        caratteristiche_individuo nuovo_individuo = crea_individuo(genes, init_people);
+        caratteristiche_individuo nuovo_individuo = crea_individuo(genes, init_people, 'C');
         if (nuovo_individuo.tipo == 'A') {
             sem_rilascia(sem_recupero(SEM_AZIONE_B));
             sem_rilascia(sem_shm_b_id);
@@ -586,39 +545,28 @@ void aggiorna_utente_terminazione_simulazione() {
     shm_detach_descrizione_simulazione(descrizione);
 }
 
-caratteristiche_individuo recupera_a(pid_t pid_a, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id) {
+caratteristiche_individuo recupera(pid_t pid, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id, char tipo) {
     caratteristiche_individuo individuo;
     individuo.tipo = 'C';
-    rappresentazione_individuo* individui; 
-    int shm_a_id = shm_recupero(SHM_A_KEY, init_people - 1);
-    shm_attach_rappresentazione_individuo(shm_a_id, &individui);
-    for (int i = 0; i < init_people - 1; i++) {
-        if (individui[i].utilizzata && individui[i].pid == pid_a) {
-            individuo = individui[i].caratteristiche;
-            individui[i].utilizzata = FALSE;
-            sem_riserva(sem_shm_descrizione_id);
-            (*descrizione).processi_totali_terminati++;
-            ((*descrizione).individui_a_attivi)--;
-            sem_rilascia(sem_shm_descrizione_id);
-        }
+    rappresentazione_individuo* individui;
+    int shm_id = 0;
+    if (tipo == 'A') {
+        shm_id = shm_recupero(SHM_A_KEY, init_people - 1);
+    } else {
+        shm_id = shm_recupero(SHM_B_KEY, init_people - 1);
     }
-    shm_detach_rappresentazione_individuo(individui);
-    return individuo;
-}
-
-caratteristiche_individuo recupera_b(pid_t pid_b, int init_people, descrizione_simulazione* descrizione, int sem_shm_descrizione_id) {
-    caratteristiche_individuo individuo;
-    individuo.tipo = 'C';
-    rappresentazione_individuo* individui; 
-    int shm_b_id = shm_recupero(SHM_B_KEY, init_people - 1);
-    shm_attach_rappresentazione_individuo(shm_b_id, &individui);
+    shm_attach_rappresentazione_individuo(shm_id, &individui);
     for (int i = 0; i < init_people - 1; i++) {
-        if (individui[i].utilizzata && individui[i].pid == pid_b) {
+        if (individui[i].utilizzata && individui[i].pid == pid) {
             individuo = individui[i].caratteristiche;
             individui[i].utilizzata = FALSE;
             sem_riserva(sem_shm_descrizione_id);
             (*descrizione).processi_totali_terminati++;
-            ((*descrizione).individui_b_attivi)--;
+            if (tipo == 'A') {
+                ((*descrizione).individui_a_attivi)--;
+            } else {
+                ((*descrizione).individui_b_attivi)--;
+            }
             sem_rilascia(sem_shm_descrizione_id);
         }
     }
@@ -636,35 +584,38 @@ unsigned long mcd(unsigned long a, unsigned long b) {
     return a;
 }
 
-void crea_individuo_da_coppia(caratteristiche_individuo* nuovo_individuo, caratteristiche_individuo individuo_a,caratteristiche_individuo individuo_b, unsigned long genes, bool scelta_nome, rappresentazione_individuo* individui_A, rappresentazione_individuo* individui_B, int init_people, char* tipo_scelto) {
-    // Concateno i nomi dei due individui e aggiungo una lettera casuale al fondo
-    // Potrebbe causare segmentation fault
-    if (scelta_nome) {
-        strncpy(nuovo_individuo->nome, individuo_a.nome, sizeof(char) * (LUNGHEZZA_NOME - 1));
+unsigned long genoma_nuovo_da_coppia(unsigned long genoma_individuo_a, unsigned long genoma_individuo_b, unsigned long genes) {
+    unsigned long mcd_a_b = 0;
+    if (genoma_individuo_b % genoma_individuo_a == 0) {
+        mcd_a_b = genoma_individuo_a;
     } else {
-        strncpy(nuovo_individuo->nome, individuo_b.nome, sizeof(char) * (LUNGHEZZA_NOME - 1));
+        if (genoma_individuo_a >= genoma_individuo_b) {
+            mcd_a_b = mcd(genoma_individuo_a, genoma_individuo_b);
+        } else {
+            mcd_a_b = mcd(genoma_individuo_b, genoma_individuo_a);
+        }
+    }
+
+    return (rand() % genes) + mcd_a_b;
+}
+
+void nome_nuovo_da_coppia(bool scelta_nome, char* nome_nuovo_individuo, char* nome_a, char* nome_b) {
+    if (scelta_nome) {
+        strncpy(nome_nuovo_individuo, nome_a, sizeof(char) * (LUNGHEZZA_NOME - 1));
+    } else {
+        strncpy(nome_nuovo_individuo, nome_b, sizeof(char) * (LUNGHEZZA_NOME - 1));
     }
     char char_string[2];
     char_string[0] = (char)(rand() % 25) + 65;
     char_string[1] = '\0';
-    strncat(nuovo_individuo->nome, char_string, LUNGHEZZA_NOME - strlen(nuovo_individuo->nome) - 1);
+    strncat(nome_nuovo_individuo, char_string, LUNGHEZZA_NOME - strlen(nome_nuovo_individuo) - 1);
+}
 
-    // Calcolo il Genoma del nuovo individuo
-    unsigned long mcd_a_b = 0;
-    if (individuo_b.genoma % individuo_a.genoma == 0) {
-        mcd_a_b = individuo_a.genoma;
-    } else {
-        if (individuo_a.genoma >= individuo_b.genoma) {
-            mcd_a_b = mcd(individuo_a.genoma, individuo_b.genoma);
-        } else {
-            mcd_a_b = mcd(individuo_b.genoma, individuo_a.genoma);
-        }
-    }
-
-    nuovo_individuo->genoma = (rand() % genes) + mcd_a_b;
+void crea_individuo_da_coppia(caratteristiche_individuo* nuovo_individuo, caratteristiche_individuo individuo_a,caratteristiche_individuo individuo_b, unsigned long genes, bool scelta_nome, rappresentazione_individuo* individui_A, rappresentazione_individuo* individui_B, int init_people, char* tipo_scelto) {
+    nome_nuovo_da_coppia(scelta_nome, nuovo_individuo->nome, individuo_a.nome, individuo_b.nome);
+    nuovo_individuo->genoma = genoma_nuovo_da_coppia(individuo_a.genoma, individuo_b.genoma, genes);
 
     // Calcolo tipo dell'individuo
-
     if (rand() % 2) {
         if (*tipo_scelto == 'C') {
             if (conta_individui_attivi(individui_B, init_people) < 1) {
