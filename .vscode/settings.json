@@ -3,6 +3,8 @@
     "stdio.h": "c",
     "gestione_code.h": "c",
     "tipi_simulatore_societa.h": "c",
-    "funzioni_gestore.h": "c"
+    "funzioni_gestore.h": "c",
+    "gestione_semafori.h": "c",
+    "gestione_shm.h": "c"
   }
 }
