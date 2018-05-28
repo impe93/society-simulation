@@ -17,7 +17,7 @@
 #include "gestione_shm.h"
 
 /**
- * Controlla che la stringa passata come parametro rappresenti un intero non segnato
+ * Controlla che la stringa passata come parametro rappresenti un intero senza segno
  * 
  * @param {char*} stringa: La stringa da controllare
  * @return {bool}: TRUE se la stringa è un numero non segnato, FALSE altrimenti.
@@ -40,7 +40,7 @@ void avvia_individuo (caratteristiche_individuo individuo, int init_people, int 
  * 
  * @param {unsigned long} genes: Rappresenta fino a che numero un gene può arrivare, serve per
  * limitare il valore casuale
- * @param {int} init_people: il numero massimo d'individui all'interno della simulazione
+ * @param {int} init_people: il numero massimo di individui all'interno della simulazione
  * @param {char} tipo: Il tipo dell'individuo che si sta creando che può essere A, B
  * oppure C in caso non sia da impostare
  */
@@ -55,7 +55,7 @@ caratteristiche_individuo crea_individuo (unsigned long genes, int init_people, 
 void inizializza_individui(int init_people, unsigned long genes);
 
 /**
- * Inizializza l'array di rappresentazioni degli individui di un detrminato tipo
+ * Inizializza l'array di rappresentazioni degli individui di un determinato tipo
  * con dei valori per evitare quelli di default
  * 
  * @param {int} shm_id: L'ID della shared memory di individui da inizializzare
@@ -85,10 +85,11 @@ void terminazione_simulazione(int sim_time, int init_people, pid_t pid_gestore, 
 char scelta_tipo_processo();
 
 /**
- * Invia il segnale passato come parametro al pid passato come parametro e ne gestisce l'errore
+ * Invia il segnale passato come parametro al processo con pid passato come parametro e ne 
+ * gestisce l'errore
  * 
- * @param: Il pid a cui si vuole inviare il segnale
- * @param: Il segnale che si vuole inviare al pid
+ * @param: Il pid del processo al quale si vuole inviare il segnale
+ * @param: Il segnale che si vuole inviare al processo
  * 
  * @error: Termina il processo chiamante
  */
@@ -105,19 +106,20 @@ void invio_segnale(pid_t pid, int segnale);
 int conta_individui_attivi(rappresentazione_individuo individui [], int init_people);
 
 /**
- * Genera e ritorna un numero random tra il minimo ed il massimo che sono passati come parametro
+ * Genera e ritorna un numero random compreso tra i valori min e max che sono passati come 
+ * parametri
  * 
- * @param {unsigned int} min: Il minimo numero che deve essere generato
- * @param {unsigned int} max: Il massimo numero che deve essere generato
+ * @param {unsigned int} min: Il minimo numero che può essere generato
+ * @param {unsigned int} max: Il massimo numero che può essere generato
  * @return {int}: Un numero casualmente generato
  */
 int numero_random(unsigned int min, unsigned int max);
 
 /**
- * Cerca l'individuo da terminare e gli invia un segnale di terminazione e dopo attende
- * la sua terinazione.
+ * Cerca l'individuo da terminare, gli invia un segnale di terminazione e dopo attende
+ * la sua terminazione.
  * 
- * @param {rappresentazione_individuo []} individui: L'array di individui su cui si
+ * @param {rappresentazione_individuo []} individui: L'array di individui in cui si
  * trova quello da terminare
  * @param {int}: il numero dell'individuo, tra gli individui utilizzati, scelto per
  * essere terminato
@@ -140,21 +142,14 @@ void termina_individuo(rappresentazione_individuo individui [], int numero_da_te
 void attivita_terminatore_individui(int init_people, int birth_death, unsigned long genes, descrizione_simulazione* descrizione_simulazione);
 
 /**
- * Chiamato quando un processo casuale deve terminare, il metodo lo sceglie, lo termina ed aggiorna la descrizione.
+ * Chiamato quando un processo casuale deve terminare, il metodo lo sceglie, lo termina ed 
+ * aggiorna la descrizione.
  * 
  * @param {int} init_people: La lunghezza massima che può avere l'array di individui
  * @param {descrizione_simulazione*} descrizione: La struttura che descrive la simulazione
  * @param {char} tipo_terminazione: Il tipo che andrà a terminare
  */
 void preparazione_terminazione(int init_people, descrizione_simulazione* descrizione, char tipo_terminazione);
-
-/**
- * Misura la lunghezza della stringa passata come paramentro
- * 
- * @param {char*} stringa: La stringa di cui si vuole misurare la lunghezza
- * @return {int}: la lunghezza della stringa passata come parametro
- */
-int lunghezza_stringa(char* stringa);
 
 /**
  * Compara i due nomi passati come parametro
@@ -214,7 +209,7 @@ unsigned long genoma_nuovo_da_coppia(unsigned long genoma_individuo_a, unsigned 
  * Crea il nome che avrà il figlio di una coppia dopo l'accoppiamento e lo assegna al
  * parametro nome_nuovo_individuo
  * 
- * @param {bool} scelta_nome: Il genitore da cui viene derivato il nome del figlio
+ * @param {bool} scelta_nome: Il genitore da cui deriva parte del nome del figlio
  * @param {char*} nome_nuovo_individuo: Il nome del nuovo individuo
  * @param {char*} nome_a: Il nome del genitore A
  * @param {char*} nome_b: Il nome del genitore B
@@ -224,16 +219,18 @@ void nome_nuovo_da_coppia(bool scelta_nome, char* nome_nuovo_individuo, char* no
 /**
  * Crea le caratteristiche di un nuovo individuo che si sta per creare da una coppia
  * 
- * @param {caratteristiche_individuo*} nuovo_individuo: La struttura del nuovo individuo che si sta creando
+ * @param {caratteristiche_individuo*} nuovo_individuo: La struttura del nuovo individuo che 
+ * si sta creando
  * @param {caratteristiche_individuo*} individuo_a: Le caratteristiche del genitore A
  * @param {caratteristiche_individuo*} individuo_b: Le caratteristiche del genitore B
  * @param {unsigned long} genes: il valore di genes iniziale
- * @param {int} scelta_nome: Viene utilizzato per stabilire il genitore da cui viene ereditato parte del nome
+ * @param {int} scelta_nome: viene utilizzato per stabilire il genitore da cui viene ereditato 
+ * parte del nome
  * @param {rappresentazione_individuo*} individui_B: L'array contenente gli individui B
  * @param {rappresentazione_individuo*} individui_A: L'array contenente gli individui A
  * @param {int} init_people: Il numero totale di individui
- * @param {char*} tipo_scelto: il tipo che è stato precedentemente scelto C se non è stato ancora scelto
- * nessun tipo precedentemente
+ * @param {char*} tipo_scelto: il tipo che è stato precedentemente scelto (sarà C se non è stato 
+ * ancora scelto nessun tipo precedentemente)
  */
 void crea_individuo_da_coppia(caratteristiche_individuo* nuovo_individuo, caratteristiche_individuo individuo_a,caratteristiche_individuo individuo_b, unsigned long genes, bool scelta_nome, rappresentazione_individuo* individui_A, rappresentazione_individuo* individui_B, int init_people, char* tipo_scelto);
 

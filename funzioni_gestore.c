@@ -233,6 +233,7 @@ void termina_individuo(rappresentazione_individuo individui [], int numero_da_te
 }
 
 void preparazione_terminazione(int init_people, descrizione_simulazione* descrizione, char tipo_terminazione) {
+<<<<<<< HEAD
   int sem_shm_id = 0;
   int shm_id = 0;
   if (tipo_terminazione == 'A') {
@@ -249,6 +250,24 @@ void preparazione_terminazione(int init_people, descrizione_simulazione* descriz
   int numero_da_terminare = numero_random(1, individui_attivi);
   termina_individuo(individui, numero_da_terminare, descrizione);
   shm_detach_rappresentazione_individuo(individui);
+=======
+    int sem_shm_id = 0;
+    int shm_id = 0;
+    if (tipo_terminazione == 'A') {
+        sem_shm_id = sem_recupero(SEM_SHM_A);
+        shm_id = shm_recupero(SHM_A_KEY, init_people - 1);
+    } else {
+        sem_shm_id = sem_recupero(SEM_SHM_B);
+        shm_id = shm_recupero(SHM_B_KEY, init_people - 1);
+    }
+    sem_riserva(sem_shm_id);
+    rappresentazione_individuo* individui;
+    shm_attach_rappresentazione_individuo(shm_id, &individui);
+    int individui_attivi = conta_individui_attivi(individui, init_people);
+    int numero_da_terminare = numero_random(1, individui_attivi);
+    termina_individuo(individui, numero_da_terminare, descrizione);
+    shm_detach_rappresentazione_individuo(individui);
+>>>>>>> 6f8e3799cd882668114f84079d4f4556738d0bb1
 }
 
 bool nome_piu_lungo(char* nome1, char* nome2) {
