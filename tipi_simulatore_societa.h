@@ -36,31 +36,31 @@ typedef enum { FALSE, TRUE } bool;
  * La struttura dati utilizzata per rappresentare un individuo
  */
 typedef struct {
-    char tipo;
-    char nome [LUNGHEZZA_NOME];
-    unsigned long genoma;
+  char tipo;
+  char nome [LUNGHEZZA_NOME];
+  unsigned long genoma;
 } caratteristiche_individuo;
 
 /**
  * La struttura dati utilizzata per la memorizzazione nella shared memory
  */
 typedef struct {
-    bool utilizzata;
-    pid_t pid;
-    caratteristiche_individuo caratteristiche;
+  bool utilizzata;
+  pid_t pid;
+  caratteristiche_individuo caratteristiche;
 } rappresentazione_individuo;
 
 /**
  * Struttura utilizzata per tracciare i cambiamenti durante la simulazione
  */
 typedef struct {
-    int individui_a_creati;
-    int individui_b_creati;
-    caratteristiche_individuo individuo_nome_lungo;
-    caratteristiche_individuo individuo_genoma_lungo;
-    int individui_a_attivi;
-    int individui_b_attivi;
-    int processi_totali_terminati;
+  int individui_a_creati;
+  int individui_b_creati;
+  caratteristiche_individuo individuo_nome_lungo;
+  caratteristiche_individuo individuo_genoma_lungo;
+  int individui_a_attivi;
+  int individui_b_attivi;
+  int processi_totali_terminati;
 } descrizione_simulazione;
 
 #endif

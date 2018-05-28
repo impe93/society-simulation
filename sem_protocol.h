@@ -13,13 +13,13 @@
 
 #ifndef __APPLE__
 union semun {
-    int val;
-    struct semid_ds* buf;
-    unsigned short* array;
-    
-    #if defined(__linux__)
-    struct seminfo* __buf;
-    #endif
+  int val;
+  struct semid_ds* buf;
+  unsigned short* array;
+  
+  #if defined(__linux__)
+  struct seminfo* __buf;
+  #endif
 };
 #endif
 
