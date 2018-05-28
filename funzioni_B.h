@@ -24,8 +24,7 @@
  * @param {unsigned long} genoma_B: genoma dell'individuo B
  * @param {int} numero_A: numero di individui A che possono essere contenuti nella shm A
  */
-void seleziona_individuo_A_ideale(rappresentazione_individuo* p_shm_A, individuo_per_accoppiamento* individuo_A, 
-                    unsigned long genoma_B, int numero_A);
+void seleziona_individuo_A_ideale(rappresentazione_individuo* p_shm_A, individuo_per_accoppiamento* individuo_A, unsigned long genoma_B, int numero_A);
 
 /**
  * Inserisce i dati contenuti nei parametri "pid_B" e "individuo_B" all'interno di 
@@ -36,7 +35,6 @@ void seleziona_individuo_A_ideale(rappresentazione_individuo* p_shm_A, individuo
  * @param {caratteristiche_individuo} individuo_B: individuo_B che desidera mandare richiesta di 
  * accoppiamento ad un processo A.
  */
-void inserimento_in_messaggio_accoppiamento(individuo_per_accoppiamento* messaggio_accoppiamento, 
-                    pid_t pid_B, caratteristiche_individuo individuo_B);
+void inserimento_in_messaggio_accoppiamento(individuo_per_accoppiamento* messaggio_accoppiamento, pid_t pid_B, caratteristiche_individuo individuo_B);
 
 #endif

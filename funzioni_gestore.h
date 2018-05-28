@@ -170,11 +170,6 @@ bool nome_piu_lungo(char* nome1, char* nome2);
 void aggiorna_descrizione_nuovo_individuo(caratteristiche_individuo individuo);
 
 /**
- * Stampa su terminale lo stato attuale della simulazione
- */
-void aggiorna_utente_stato_simulazione();
-
-/**
  * Recupera l'individuo con pid uguale al parametro "pid" dalla shm
  * 
  * @param {pid_t} pid: Il pid di un individuo di tipo A che si trova sulla shm A
@@ -239,6 +234,14 @@ void nome_nuovo_da_coppia(bool scelta_nome, char* nome_nuovo_individuo, char* no
  */
 void crea_individuo_da_coppia(caratteristiche_individuo* nuovo_individuo, caratteristiche_individuo individuo_a,caratteristiche_individuo individuo_b, unsigned long genes, bool scelta_nome, rappresentazione_individuo* individui_A, rappresentazione_individuo* individui_B, int init_people, char* tipo_scelto);
 
+/**
+ * Stampa su terminale lo stato attuale della simulazione
+ */
+void aggiorna_utente_stato_simulazione();
+
+/**
+ * Aggiorna l'utente sullo stato finale della simulazione
+ */
 void aggiorna_utente_terminazione_simulazione();
 
 #endif

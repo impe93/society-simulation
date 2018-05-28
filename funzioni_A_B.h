@@ -14,7 +14,7 @@
 /**
  * Inserisce i dati passati all'interno del parametro argv all'interno della struttura
  * caratteristiche_individuo puntata dal parametro p.
- * @param {caratteristiche_individuo*} p: riferimento a nuovo individuo in creazione
+ * @param {caratteristiche_individuo*} p: riferimento al nuovo individuo in creazione
  * @param {char**} argv: dati passati al processo A (B) dal gestore e contenenti le 
  * caratteristiche del nuovo individuo (tipo, nome, genoma)
  */
