@@ -32,7 +32,7 @@ typedef struct {
 } individuo_per_accoppiamento;
 
 /**
- * La struttura dati utilizzata per rappresentare messaggio di richiesta 
+ * La struttura dati utilizzata per rappresentare un messaggio di richiesta 
  * di accoppiamento.
  */
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
 } msg_individuo;
 
 /**
- * La struttura dati utilizzata per rappresentare messaggio di risposta ad
+ * La struttura dati utilizzata per rappresentare un messaggio di risposta ad
  * una richiesta di accoppiamento.
  */
 typedef struct {
@@ -60,7 +60,7 @@ typedef struct {
 } informazioni_accoppiamento;
 
 /**
- * La struttura dati utilizzata per rappresentare messaggio di notifica al
+ * La struttura dati utilizzata per rappresentare un messaggio di notifica al
  * gestore di un avvenuto accoppiamento da parte di un individuo A oppure B. 
  */
 typedef struct {

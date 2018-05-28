@@ -260,7 +260,7 @@ int lunghezza_stringa(char* stringa) {
 }
 
 bool nome_piu_lungo(char* nome1, char* nome2) {
-    if (lunghezza_stringa(nome1) > lunghezza_stringa(nome2)) {
+    if (strlen(nome1) > strlen(nome2)) {
         return TRUE;
     } else {
         return FALSE;
