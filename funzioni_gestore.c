@@ -251,16 +251,8 @@ void preparazione_terminazione(int init_people, descrizione_simulazione* descriz
     shm_detach_rappresentazione_individuo(individui);
 }
 
-int lunghezza_stringa(char* stringa) {
-    int lunghezza = 0;
-    for(int i = 0; *(stringa + i) != '\0'; i++) {
-        lunghezza++;
-    }
-    return lunghezza;
-}
-
 bool nome_piu_lungo(char* nome1, char* nome2) {
-    if (lunghezza_stringa(nome1) > lunghezza_stringa(nome2)) {
+    if (strlen(nome1) > strlen(nome2)) {
         return TRUE;
     } else {
         return FALSE;

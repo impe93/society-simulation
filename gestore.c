@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
   unsigned int birth_death = 0;
 
   /**
-   * Un int che rappresenta i secondi di esecuzione della simulazione.
+   * Un int che rappresenta i secondi di esecuzione della simulazione
    */
   unsigned int sim_time = 0;
 
@@ -107,12 +107,12 @@ int main(int argc, char** argv) {
   descrizione_simulazione* descrizione = NULL;
 
   /**
-   * Il puntatore alla Shm A
+   * Il puntatore alla memoria condivisa dove sono contenuti gli individui A
    */
   rappresentazione_individuo* individui_A;
 
   /**
-   * Il puntatore alla Shm B
+   * Il puntatore alla memoria condivisa dove sono contenuti gli individui B
    */
   rappresentazione_individuo* individui_B;
   
@@ -157,26 +157,26 @@ int main(int argc, char** argv) {
   }
 
   /**
-   * Semaforo che regolamenta le macro azioni (accoppiamento terminazione
+   * Semaforo che regolamenta le macro azioni (accoppiamento, terminazione
    * processi e terminazione simulazione)
    */
   int sem_azione_id = sem_creazione(SEM_AZIONE);
   sem_init_disponibile(sem_azione_id);
 
   /**
-   * Semaforo che regolamenta le azione per gli individui A
+   * Semaforo che regolamenta le azioni per gli individui A
    */
   int sem_azione_a_id = sem_creazione(SEM_AZIONE_A);
   sem_init_disponibile(sem_azione_a_id);
 
   /**
-   * Semaforo che regolamenta le azione per gli individui B
+   * Semaforo che regolamenta le azioni per gli individui B
    */
   int sem_azione_b_id = sem_creazione(SEM_AZIONE_B);
   sem_init_disponibile(sem_azione_b_id);
 
   /**
-   * l'ID della shm creata per gli individui di tipo A
+   * L'ID della shm creata per gli individui di tipo A
    */
   int shm_a_id = shm_creazione(SHM_A_KEY, init_people - 1);
   inizializza_shm(shm_a_id, init_people);
@@ -189,21 +189,21 @@ int main(int argc, char** argv) {
   sem_init_disponibile(sem_shm_a_id);
 
   /**
-   * l'ID della shm creata per gli individui di tipo B
+   * L'ID della shm creata per gli individui di tipo B
    */
   int shm_b_id = shm_creazione(SHM_B_KEY, init_people - 1);
   inizializza_shm(shm_b_id, init_people);
   
   /**
    * Creazione e inizializzazione del semaforo per l'accesso alla shm per
-   * individui di tipo A
+   * individui di tipo B
    */
   int sem_shm_b_id = sem_creazione(SEM_SHM_B);
   sem_init_disponibile(sem_shm_b_id);
 
   /**
    * ID ed inizializzazione dei semafori per la sincronizzazione
-   * degli individui prima della partenza con il gestore
+   * degli individui con il gestore prima dell'avvio della simulazione
    */
   int sem_sinc_padre_id = sem_creazione(SEM_SINC_GESTORE);
   sem_init_occupato(sem_sinc_padre_id);
@@ -214,12 +214,12 @@ int main(int argc, char** argv) {
   msg_crea_coda_messaggi(MSG_A_B);
 
   /**
-   * Crea una coda di messaggi per la comunicazione tra gestore ed A
+   * Crea una coda di messaggi per la comunicazione tra gestore ed individui A
    */
   int msg_gestore_a = msg_crea_coda_messaggi(MSG_GESTORE_A);
 
   /**
-   * Crea una coda di messaggi per la comunicazione tra gestore ed B
+   * Crea una coda di messaggi per la comunicazione tra gestore ed individui B
    */
   int msg_gestore_b = msg_crea_coda_messaggi(MSG_GESTORE_B);
 
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
   shm_attach_descrizione_simulazione(shm_descrizione_id, &descrizione);
 
   /**
-   * Inizializzazione del semaforo per la creaziones
+   * Inizializzazione del semaforo per la creazione
    */
   int sem_shm_descrizione_id = sem_creazione(SEM_SHM_DESCRIZIONE);
   sem_init_disponibile(sem_shm_descrizione_id);
@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
   }
 
   /**
-   * Creazione del figlio che si occupa della terminazione casuale dei processi A e B.
+   * Creazione del figlio che si occupa della terminazione casuale dei processi A e B
    */
   switch(pid_terminatore_processi = fork()) {
     case -1: {
@@ -270,7 +270,7 @@ int main(int argc, char** argv) {
   }
 
   /**
-   * Creazione del figlio che fa il conto alla rovescia per la terminazione.
+   * Creazione del figlio che fa il conto alla rovescia per la terminazione della simulazione
    */
   switch(fork()) {
     case -1: {
@@ -279,8 +279,8 @@ int main(int argc, char** argv) {
     }
     case 0: {
       if (signal(SIGTERM, term_terminatore_handler) == SIG_ERR) {
-          printf("Errore durante l'assegnazione dell'handler al terminatore di processi.\n");
-          exit(EXIT_FAILURE);
+        printf("Errore durante l'assegnazione dell'handler al terminatore di processi.\n");
+        exit(EXIT_FAILURE);
       }
       terminazione_simulazione(sim_time, init_people, pid_gestore, pid_terminatore_processi);
       exit(EXIT_SUCCESS);
@@ -308,23 +308,23 @@ int main(int argc, char** argv) {
       caratteristiche_individuo nuovo_individuo_2;
       crea_individuo_da_coppia(&nuovo_individuo_2, individuo_a, individuo_b, genes, 1, individui_A, individui_B, init_people, &tipo_scelto);
       
-      // Aggiungi individui in memoria
+      // Aggiunge individui nella memoria condivisa
       if ((nuovo_individuo_1.tipo == 'A' && nuovo_individuo_2.tipo == 'B') || (nuovo_individuo_1.tipo == 'B' && nuovo_individuo_2.tipo == 'A')) {
-          avvia_individuo(nuovo_individuo_1, init_people, 2);
-          avvia_individuo(nuovo_individuo_2, init_people, 2);
-          sem_rilascia(sem_azione_id);
+        avvia_individuo(nuovo_individuo_1, init_people, 2);
+        avvia_individuo(nuovo_individuo_2, init_people, 2);
+        sem_rilascia(sem_azione_id);
       } else if (nuovo_individuo_1.tipo == 'A' && nuovo_individuo_2.tipo == 'A') {
-          avvia_individuo(nuovo_individuo_1, init_people, 2);
-          sem_riserva(sem_shm_a_id);
-          avvia_individuo(nuovo_individuo_2, init_people, 1);
-          sem_rilascia(sem_azione_b_id);
-          sem_rilascia(sem_shm_b_id);
+        avvia_individuo(nuovo_individuo_1, init_people, 2);
+        sem_riserva(sem_shm_a_id);
+        avvia_individuo(nuovo_individuo_2, init_people, 1);
+        sem_rilascia(sem_azione_b_id);
+        sem_rilascia(sem_shm_b_id);
       } else {
-          avvia_individuo(nuovo_individuo_1, init_people, 2);
-          sem_riserva(sem_shm_b_id);
-          avvia_individuo(nuovo_individuo_2, init_people, 1);
-          sem_rilascia(sem_azione_a_id);
-          sem_rilascia(sem_shm_a_id);
+        avvia_individuo(nuovo_individuo_1, init_people, 2);
+        sem_riserva(sem_shm_b_id);
+        avvia_individuo(nuovo_individuo_2, init_people, 1);
+        sem_rilascia(sem_azione_a_id);
+        sem_rilascia(sem_shm_a_id);
       }
     } else {
       printf("Errore durante il recupero delle informazioni sull'accoppiamento.\n");
