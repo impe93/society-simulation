@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
-#include <limits.h>
 
 #include "tipi_simulatore_societa.h"
 #include "funzioni_gestore.h"
@@ -134,8 +133,6 @@ int main(int argc, char** argv) {
 
     if (isUnsignedNumber(*(argv + 2))) {
       genes = atol(*(argv + 2));
-      printf("Genes = %lu\n", genes);
-      printf("LONG_MAX   :   %lu\n", (unsigned long) ULONG_MAX);
     } else {
       printf("Il numero che rappresenta il genes deve essere un long senza segno.\n");
       corretto = FALSE;
